@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.12)
 
-set (PROJECT Conveyor)
+set (PROJECT PipeLine)
 
-#set(CMAKE_CXX_COMPILER_ID "msvc")
+set (CMAKE_CXX_STANDARD 20)
+set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(${PROJECT} VERSION 1.0 LANGUAGES CXX)
 
@@ -13,22 +14,16 @@ source_group ("Header Files" FILES ${HEADERS})	#1
 source_group ("Source Files" FILES ${SOURCES})	#2
 
 include_directories (include/)
- 
-set (LIBRARIES
-		#opencv
-		#ИМЯ_БИБЛИОТЕКИ_2
-)
- 
-foreach (LIBRARY ${LIBRARIES})
-	add_subdirectory (../${LIBRARY}/build bin/${LIBRARY})
-endforeach ()
- 
+  
 set (HEADERS
-		include/conveyor/conveyor.hpp
-		include/opencv/opencv.hpp)
+		${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/pipeline.hpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/stage.hpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/parser/parser.hpp
+		${CMAKE_CURRENT_SOURCE_DIR}/include/opencv/opencv.hpp
+		${CMAKE_CURRENT_SOURCE_DIR}/include/json/json.hpp)
 set (SOURCES 
-		src/source.cpp)
+		source.cpp)
 
-add_executable (${PROJECT} ${HEADERS} ${SOURCES})
- 
-target_link_libraries (${PROJECT} ${LIBRARIES})
+add_executable (Source source.cpp ${HEADERS} ${SOURCES})
+target_include_directories(Source PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(Source PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)

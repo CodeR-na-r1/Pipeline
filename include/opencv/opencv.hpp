@@ -6,7 +6,7 @@ using std::ostream;
 
 namespace FakeOpenCV {
 
-	struct NDArray { 
+	struct NDArray {
 
 		int shape;
 		int dtype;

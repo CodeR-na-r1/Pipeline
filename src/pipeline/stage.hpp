@@ -7,7 +7,7 @@
 
 #include <functional>
 
-namespace Conveyor {
+namespace Pipeline {
 
 	using namespace std;
 
@@ -20,7 +20,7 @@ namespace Conveyor {
 
 		Stage(function<TData(TData)> callable, string name, vector<Stage> childs) : callable(callable), name(name), childs(childs) {}
 
-		/*virtual*/ void operator()(TData data) {
+		void operator()(TData data) {
 
 			auto result = callable(data);
 

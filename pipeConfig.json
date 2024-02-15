@@ -1,0 +1,21 @@
+{
+    "stages" : {
+        
+        "start" : "source",
+        "list" : [
+            {"name" : "source", "callable" : "getImage"},
+            {"name" : "convert", "callable" : "rgb2gray"},
+            {"name" : "blur", "callable" : "gaussian"},
+            {"name" : "display", "callable" : "display"}
+        ]
+    },
+
+    "connections" : {
+
+        "list" : [
+            {"from" : "source", "to" : ["convert", "display"]},
+            {"from" : "convert", "to" : ["blur", "display"]},
+            {"from" : "blur", "to" : "display"}
+        ]
+    }
+}
