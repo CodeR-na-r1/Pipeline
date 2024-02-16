@@ -37,7 +37,7 @@ namespace Pipeline {
 
 		void dump(ostream& os) const {
 
-			os << "\"" << name << "\"" << " childs: ";
+			os << name << "(";
 
 			bool isFirst = true;	// for beautiful output
 

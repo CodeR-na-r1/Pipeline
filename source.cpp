@@ -49,7 +49,7 @@ int main() {
 			return -1;
 		}
 
-		Stage source = JsonParser::fromFile<NDArray>(fileJsonConfig, [](std::string callableName) -> function<NDArray(NDArray)> {
+		auto source = JsonParser::fromFile<NDArray>(fileJsonConfig, [](std::string callableName) -> function<NDArray(NDArray)> {
 
 			if (callableName == "getImage") {
 				return [](NDArray data) { return data; };
@@ -67,8 +67,8 @@ int main() {
 			return [](NDArray data) { return data; };
 			});
 
-		cout << source;
-		source(FakeOpenCV::getImage());
+		cout << (*source) << endl;
+		source->operator()(FakeOpenCV::getImage());
 	}
 
 	return 0;
