@@ -5,7 +5,7 @@
 #include "zmq.hpp"
 #include "zmq_addon.hpp"
 
-#include "ndarray.capnp.h"
+#include "scheme/ndarray.capnp.h"
 #include "capnp/serialize.h"
 #include <capnp/message.h>
 #include <capnp/serialize.h>

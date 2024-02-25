@@ -9,21 +9,38 @@ project(${PROJECT} VERSION 1.0 LANGUAGES CXX)
 
 set (CMAKE_CXX_FLAGS "-std=c++20 -Wall ${CMAKE_CXX_FLAGS}")
 
+# dependency search
+find_package(CapnProto REQUIRED)
+
+find_package(cppzmq REQUIRED)
+
+set(MyBoostHeaders "regex" "filesystem")
+
+find_package(Boost 1.70 REQUIRED COMPONENTS ${MyBoostHeaders})
+
+set (HEADERS
+	${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/pipeline.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/stage.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/parser/parser.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/opencv/opencv.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/json/json.hpp)
+set (SOURCES 
+	source.cpp)
+
 # for VS
 source_group ("Header Files" FILES ${HEADERS})	#1
 source_group ("Source Files" FILES ${SOURCES})	#2
 
-include_directories (include/)
-  
-set (HEADERS
-		${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/pipeline.hpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/stage.hpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/parser/parser.hpp
-		${CMAKE_CURRENT_SOURCE_DIR}/include/opencv/opencv.hpp
-		${CMAKE_CURRENT_SOURCE_DIR}/include/json/json.hpp)
-set (SOURCES 
-		source.cpp)
-
 add_executable (Source source.cpp ${HEADERS} ${SOURCES})
+
 target_include_directories(Source PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(Source PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+add_executable (Source2 sourceGenerator.cpp)
+
+target_link_libraries(Source2 PRIVATE CapnProto::capnp)
+target_include_directories(Source2 PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(Source2 PRIVATE ${CAPNP_INCLUDE_DIRS})
+
+target_link_libraries(Source2 PRIVATE cppzmq ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(Source2 PUBLIC ${cppzmq_INCLUDE_DIR})
