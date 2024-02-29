@@ -11,109 +11,105 @@
 #include <capnp/serialize.h>
 #include <kj/std/iostream.h>
 
+#include "boost/asio.hpp"
+#include "boost/asio/thread_pool.hpp"
+#include <boost/thread/thread.hpp>
+
+#include "boost/lockfree/spsc_queue.hpp"
+
+#include "boost/numeric/ublas/tensor/tensor.hpp"
+#include <boost/numeric/ublas/tensor/extents.hpp>   // extents == shape
+
 using namespace std;
-
-namespace Pipe {
-
-    struct MyNDArray {
-
-        std::vector<uint32_t> shape;
-        uint64_t timestamp;
-    };
-
-}
-
-//struct NDArray {
-
-//};
+using TensorT = boost::numeric::ublas::tensor<double>;
+using ShapeT = boost::numeric::ublas::shape;
 
 int main() {
 
-    // 1 sample
     {
-        zmq::context_t ctx;
-        zmq::socket_t sock(ctx, zmq::socket_type::push);
-        sock.bind("inproc://test");
-        sock.send(zmq::str_buffer("Hello, world"), zmq::send_flags::dontwait);
-    }
+        // prepare getting data from network via zmq
 
-    // 2 sample
-    {
-        const char* ip = "*";
+        const char* ip = "127.0.0.1";
         const int port = 5555;
 
         zmq::context_t ctx;
-        zmq::socket_t dataReceiver(ctx, zmq::socket_type::sub);
 
-        //dataReceiver.connect("tcp://" + *ip + *":" + port);
-        dataReceiver.connect("tcp://127.0.0.1:5555");
-        dataReceiver.set(zmq::sockopt::subscribe, "");
+        boost::lockfree::spsc_queue<TensorT, boost::lockfree::capacity<1024> > rawDataQ;  // buffer
 
-        //std::vector<zmq::message_t> msgQueue;
-        zmq::message_t msg;
-
-        while (true) {
-            //1
-            zmq::recv_result_t result = dataReceiver.recv(msg, zmq::recv_flags::none);
-
-            assert(result && "recv failed");
-
-            std::cout << msg.to_string() << endl;
-
-            // create a memory buffer from the received message
-            //kj::ArrayPtr<capnp::word> buf(reinterpret_cast<capnp::word*>(msg.data()), msg.size() / sizeof(capnp::word)); // lose - because!? (+ ref i on SO)
-
-            auto buf = kj::heapArray<capnp::word>(msg.size() / sizeof(capnp::word));
-            memcpy(buf.asBytes().begin(), msg.data(), buf.asBytes().size());
-
-            // create an input stream from the memory buffer
-            capnp::FlatArrayMessageReader message_reader(buf);
-            NDArray::Reader ndarray = message_reader.getRoot<NDArray>();
-
-            //3 use data from capnp
-            Pipe::MyNDArray mnd;
-
-            mnd.timestamp = ndarray.getTimestamp();
-
-            for (auto&& dim : ndarray.getShape()) {
-                mnd.shape.push_back(dim);
-            }
-            
-            switch (ndarray.getDtype())
+        //boost::asio::io_service ioService;  // for threads (::run)
+        boost::thread_group networkThreadpool;
+        networkThreadpool.create_thread([&ctx, &rawDataQ]()
             {
-            case NDArray::DType::BOOL:
-                break;
-            case NDArray::DType::UINT16:
-                cout << "UINT16" << endl;
-                break;
-            case NDArray::DType::FLOAT64:
-                cout << "FLOAT64" << endl;
-                break;
-            default:
-                break;
+                cout << "threadstart" << endl;
+                zmq::socket_t dataReceiver(ctx, zmq::socket_type::sub);
+                dataReceiver.connect("tcp://127.0.0.1:5555");
+                dataReceiver.set(zmq::sockopt::subscribe, "");
+
+                zmq::message_t msg;
+                std::vector<std::size_t> shapeVector{}; shapeVector.reserve(3);
+
+                while (true) {
+
+                    cout << "request" << endl;
+
+                    boost::this_thread::interruption_point();
+
+                    zmq::recv_result_t result = dataReceiver.recv(msg, zmq::recv_flags::dontwait);  // change flag after debugging
+
+                    if (!result)  // instead of assert below
+                    {
+                        Sleep(1000);    // delete after debugging (and change flag)
+                        continue;
+                    }
+                    //assert(result && "recv failed");
+
+                    cout << "1" << endl;
+                    std::cout << msg.to_string() << endl;
+
+                    cout << "2" << endl;
+                    // create a memory buffer from the received message
+                    auto buf = kj::heapArray<capnp::word>(msg.size() / sizeof(capnp::word));
+                    memcpy(buf.asBytes().begin(), msg.data(), buf.asBytes().size());
+
+                    cout << "3" << endl;
+                    // create an input stream from the memory buffer
+                    capnp::FlatArrayMessageReader message_reader(buf);
+                    NDArray::Reader ndarray = message_reader.getRoot<NDArray>();
+
+                    cout << "4" << endl;
+                    // deserialization and putting data into a tensor
+                    // 
+                    // shape
+                    if (ndarray.getShape().size() == 1)
+                        shapeVector.push_back(1);
+
+                    for (auto&& dimm : ndarray.getShape()) {
+                        shapeVector.push_back(static_cast<std::size_t>(dimm));
+                    }
+                    ShapeT shapeTensor{ shapeVector };
+                    shapeVector.clear();
+                    cout << "5" << endl;
+                    //
+                    // data
+                    TensorT tensor{ shapeTensor };
+                    cout << tensor.size() << endl;
+                    //std::copy(ndarray.getData().begin(), ndarray.getData().end(), tensor.data()); // TENSOR HOW FILL ELEMENTS (inner storage in tensor not line?)
+
+                    while (!rawDataQ.push({})) {}
+
+                    msg.rebuild();  // CHECK THIS
+                }
             }
+        );
 
-            //2
-            //zmq::recv_result_t result = zmq::recv_multipart(dataReceiver, std::back_inserter(msgQueue));
+        cout << "size queue -> " << rawDataQ.read_available() << endl;
 
-            /*
-            for (auto&& msg : msgQueue) {
+        Sleep(10000);    // work emulation
+        networkThreadpool.interrupt_all();  /// interrupts threads
+        networkThreadpool.join_all();   // join threads
 
-                std::cout << msg.to_string() << endl;
-
-                //work with capnp here
-                // 
-                // create a memory buffer from the received message
-                kj::ArrayPtr<capnp::word> buffer(reinterpret_cast <capnp::word*>(zmq_message.data()), zmq_message.size() / sizeof(capnp::word));
-
-                // create an input stream from the memory buffer
-                capnp::FlatArrayMessageReader message_reader(buffer);
-                Message::Reader message = message_reader.getRoot<Message>();
-            }
-            msgQueue.clear();
-            */
-        }
+        cout << "size queue -> " << rawDataQ.read_available() << endl;
     }
 
-	return 0;
+    return 0;
 }

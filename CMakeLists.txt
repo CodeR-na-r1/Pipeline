@@ -14,9 +14,10 @@ find_package(CapnProto REQUIRED)
 
 find_package(cppzmq REQUIRED)
 
-set(MyBoostHeaders "regex" "filesystem")
+#set(MyBoostHeaders "regex" "filesystem")
+#find_package(Boost 1.70 REQUIRED COMPONENTS ${MyBoostHeaders})
 
-find_package(Boost 1.70 REQUIRED COMPONENTS ${MyBoostHeaders})
+find_package(Boost 1.70 REQUIRED COMPONENTS ALL)
 
 set (HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/pipeline.hpp
@@ -43,4 +44,7 @@ target_include_directories(Source2 PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(Source2 PRIVATE ${CAPNP_INCLUDE_DIRS})
 
 target_link_libraries(Source2 PRIVATE cppzmq ${CMAKE_THREAD_LIBS_INIT})
-target_include_directories(Source2 PUBLIC ${cppzmq_INCLUDE_DIR})
+target_include_directories(Source2 PRIVATE ${cppzmq_INCLUDE_DIR})
+
+target_link_libraries(Source2 PRIVATE ${Boost_LIBRARIES})
+target_include_directories(Source2 PRIVATE ${Boost_INCLUDE_DIRS})
