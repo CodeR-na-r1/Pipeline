@@ -63,20 +63,16 @@ int main() {
                     }
                     //assert(result && "recv failed");
 
-                    cout << "1" << endl;
                     std::cout << msg.to_string() << endl;
 
-                    cout << "2" << endl;
                     // create a memory buffer from the received message
                     auto buf = kj::heapArray<capnp::word>(msg.size() / sizeof(capnp::word));
                     memcpy(buf.asBytes().begin(), msg.data(), buf.asBytes().size());
 
-                    cout << "3" << endl;
                     // create an input stream from the memory buffer
                     capnp::FlatArrayMessageReader message_reader(buf);
                     NDArray::Reader ndarray = message_reader.getRoot<NDArray>();
 
-                    cout << "4" << endl;
                     // deserialization and putting data into a tensor
                     // 
                     // shape
@@ -86,16 +82,20 @@ int main() {
                     for (auto&& dimm : ndarray.getShape()) {
                         shapeVector.push_back(static_cast<std::size_t>(dimm));
                     }
-                    ShapeT shapeTensor{ shapeVector };
+                    ShapeT shapeTensor{ {shapeVector.crbegin(), shapeVector.crend()} };
                     shapeVector.clear();
-                    cout << "5" << endl;
+
                     //
                     // data
                     TensorT tensor{ shapeTensor };
-                    cout << tensor.size() << endl;
-                    //std::copy(ndarray.getData().begin(), ndarray.getData().end(), tensor.data()); // TENSOR HOW FILL ELEMENTS (inner storage in tensor not line?)
 
-                    while (!rawDataQ.push({})) {}
+                    auto data = ndarray.getData().begin();
+                    for (size_t i(0ul); i < tensor.extents().product(); ++i)
+                    {
+                        tensor[i] = *(data++);  // I have not been able to use std::copy here :(
+                    }
+                    
+                    while (!rawDataQ.push(tensor)) {}
 
                     msg.rebuild();  // CHECK THIS
                 }
