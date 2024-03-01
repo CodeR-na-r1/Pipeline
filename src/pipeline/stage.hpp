@@ -14,11 +14,18 @@ namespace Pipeline {
 	template <typename TData>
 	struct Stage {
 
+	private:
+
+		static std::size_t idTotalCounter;
+
+	public:
+
+		std::size_t id;
 		function<TData(TData)> callable;
 		string name;
 		vector<Stage> childs;
 
-		Stage(function<TData(TData)> callable, string name, vector<Stage> childs) : callable(callable), name(name), childs(childs) {}
+		Stage(function<TData(TData)> callable, string name, vector<Stage> childs) : id(idTotalCounter++), callable(callable), name(name), childs(childs) {}
 
 		void operator()(TData data) {
 
@@ -59,4 +66,7 @@ namespace Pipeline {
 		}
 
 	};
+
+	template<typename TData>
+	std::size_t Stage<TData>::idTotalCounter = 0;
 }

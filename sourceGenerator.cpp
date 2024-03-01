@@ -20,6 +20,8 @@
 #include "boost/numeric/ublas/tensor/tensor.hpp"
 #include <boost/numeric/ublas/tensor/extents.hpp>   // extents == shape
 
+#include "pipeline/stage.hpp"
+
 using namespace std;
 using TensorT = boost::numeric::ublas::tensor<double>;
 using ShapeT = boost::numeric::ublas::shape;
@@ -27,6 +29,8 @@ using ShapeT = boost::numeric::ublas::shape;
 int main() {
 
     {
+        // InputNetworkManager {begin}
+        // 
         // prepare getting data from network via zmq
 
         const char* ip = "127.0.0.1";
@@ -104,11 +108,28 @@ int main() {
 
         cout << "size queue -> " << rawDataQ.read_available() << endl;
 
+        cout << "Wait while input queue will filled" << endl;
         Sleep(10000);    // work emulation
-        networkThreadpool.interrupt_all();  /// interrupts threads
-        networkThreadpool.join_all();   // join threads
 
         cout << "size queue -> " << rawDataQ.read_available() << endl;
+
+        // InputNetworkManager {end}
+        // 
+        // Pipeline -> 'ProcessingManager' {begin}
+
+        // Creating queue for each stage
+        std::unordered_map<size_t, std::shared_ptr<boost::lockfree::spsc_queue<boost::numeric::ublas::tensor<double>>>> qMap;
+
+
+        
+
+        // Pipeline -> 'ProcessingManager' {end}
+        //
+        //---------
+        // 
+        // Part of InputNetworkManager (stopping threadpool)
+        networkThreadpool.interrupt_all();  /// interrupts threads
+        networkThreadpool.join_all();   // join threads
     }
 
     return 0;

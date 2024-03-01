@@ -32,10 +32,13 @@ set (SOURCES
 source_group ("Header Files" FILES ${HEADERS})	#1
 source_group ("Source Files" FILES ${SOURCES})	#2
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+
 add_executable (Source source.cpp ${HEADERS} ${SOURCES})
 
-target_include_directories(Source PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_include_directories(Source PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+# target_include_directories(Source PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+# target_include_directories(Source PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 add_executable (Source2 sourceGenerator.cpp)
 
