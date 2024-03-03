@@ -207,7 +207,7 @@ int main() {
             // preparing the necessary objects
             auto&& inputQueue = inputQueueMap.at(stageIt->second.id);
             auto&& outputQueues = outputQueueMap.at(stageIt->second.id);
-            auto&& executor = stageIt->second.callable;
+            auto&& executor = stageIt->second.callable; // copy or move?? (TODO move)
 
             // create thread
             stagesThreadpool.create_thread([id = stageIt->first, inputQueue, outputQueues, executor]() {
@@ -218,13 +218,24 @@ int main() {
 
                     if (inputQueue->read_available()) {
 
-                        auto res = executor((*inputQueue->front()));
+                        cout << "Thread id -> " << id << "; get work" << endl;
+                        auto&& res = executor((*inputQueue->front()));
+                        auto&& temp = std::shared_ptr<TensorT>{ new TensorT(res) };
+                        for (auto&& q : outputQueues) {
+
+                            while (!q->push(temp)) {}
+                        }
+
                         inputQueue->pop();
 
                         // put res in output queue
                     }
+                    else {
+                        //cout << "Thread id -> " << id << "; sleep" << endl;
+                        Sleep(1000);
+                    }
 
-                    cout << "ID -> " << id << "; Size -> " << inputQueue->read_available() << endl;
+                    //cout << "ID -> " << id << "; Size -> " << inputQueue->read_available() << endl;
                 }
                 }
             );
@@ -236,6 +247,10 @@ int main() {
         //---------
         // 
         // Part of InputNetworkManager (stopping threadpool)
+
+        cout << "Wait end of work" << endl;
+        Sleep(15000);
+
         networkThreadpool.interrupt_all();  /// interrupts threads
         networkThreadpool.join_all();   // join threads
 
