@@ -27,8 +27,11 @@
 #include "pipeline/stage.hpp"
 
 using namespace std;
+
 using TensorT = boost::numeric::ublas::tensor<double>;
 using ShapeT = boost::numeric::ublas::shape;
+
+using spsc_queueT = boost::lockfree::spsc_queue<std::shared_ptr<TensorT>, boost::lockfree::capacity<1024>>;
 
 Pipeline::Stage<TensorT> getStages() {
 
@@ -60,6 +63,10 @@ Pipeline::Stage<TensorT> getStages() {
         return source;
 }
 
+// REFACTOR:
+// + parser
+// + queue : capacity? OR reserve
+
 int main() {
 
     {
@@ -72,11 +79,11 @@ int main() {
 
         zmq::context_t ctx;
 
-        boost::lockfree::spsc_queue<std::shared_ptr<TensorT>, boost::lockfree::capacity<1024> > rawDataQ;  // buffer
+        std::shared_ptr<spsc_queueT> rawDataQ{ new spsc_queueT };  // buffer
 
         //boost::asio::io_service ioService;  // for threads (::run)
         boost::thread_group networkThreadpool;
-        networkThreadpool.create_thread([&ctx, &rawDataQ]()
+        networkThreadpool.create_thread([&ctx, rawDataQ]()
             {
                 cout << "threadstart" << endl;
                 zmq::socket_t dataReceiver(ctx, zmq::socket_type::sub);
@@ -134,19 +141,19 @@ int main() {
                     }
                     
                     std::shared_ptr<TensorT> temp{ tensor };
-                    while (!rawDataQ.push(temp)) {}
+                    while (!rawDataQ->push(temp)) {}
 
                     msg.rebuild();  // CHECK THIS
                 }
             }
         );
 
-        cout << "size queue -> " << rawDataQ.read_available() << endl;
+        cout << "size queue -> " << rawDataQ->read_available() << endl;
 
         cout << "Wait while input queue will filled" << endl;
-        //Sleep(10000);    // work emulation
+        Sleep(10000);    // work emulation
 
-        cout << "size queue -> " << rawDataQ.read_available() << endl;
+        cout << "size queue -> " << rawDataQ->read_available() << endl;
 
         // InputNetworkManager {end}
         // 
@@ -160,10 +167,12 @@ int main() {
         // create map for stages launch in multi-threading
 
         std::unordered_map<size_t, Pipeline::Stage<TensorT>> stagesMap; // id ->  stage by id
-        std::unordered_map<size_t, std::shared_ptr<boost::lockfree::spsc_queue<std::shared_ptr<TensorT>>>> inputQueueMap; // get parent queue for current stage by id (i.e. get input queue)
-        std::unordered_map<size_t, std::vector<std::shared_ptr<boost::lockfree::spsc_queue<std::shared_ptr<TensorT>>>>> outputQueueMap; // get parent queue for current stage by id (i.e. get input queue)
+        std::unordered_map<size_t, std::shared_ptr<spsc_queueT>> inputQueueMap; // get parent queue for current stage by id (i.e. get input queue)
+        std::unordered_map<size_t, std::vector<std::shared_ptr<spsc_queueT>>> outputQueueMap; // get vector of child queues for current stage by id (i.e. get output queues)
 
-        // fill 1 map
+        // fill map's
+        inputQueueMap.insert({ 0, rawDataQ });
+
         std::queue<Pipeline::Stage<TensorT>*> queue;
         queue.push(&stages);
 
@@ -176,7 +185,7 @@ int main() {
 
             for (auto&& child: current->childs) {
 
-                std::shared_ptr<boost::lockfree::spsc_queue<std::shared_ptr<TensorT>>> temp = { {} };
+                std::shared_ptr<spsc_queueT> temp{ new spsc_queueT };
                 outputQueueMap.at(current->id).push_back(temp);
                 inputQueueMap.insert({ child.id , temp });
                 queue.push(&child);
@@ -187,10 +196,40 @@ int main() {
             queue.pop();
         }
 
-        // fill 2 and 3 map's
+        // create threadPool for stages
+        boost::thread_group stagesThreadpool;
 
+        // put stage in thread
+        for (auto stageIt = stagesMap.begin(); stageIt != stagesMap.end(); ++stageIt) {
 
-        
+            cout << "Stage id -> " << stageIt->second.id << "; Name -> " << stageIt->second.name << endl;
+
+            // preparing the necessary objects
+            auto&& inputQueue = inputQueueMap.at(stageIt->second.id);
+            auto&& outputQueues = outputQueueMap.at(stageIt->second.id);
+            auto&& executor = stageIt->second.callable;
+
+            // create thread
+            stagesThreadpool.create_thread([id = stageIt->first, inputQueue, outputQueues, executor]() {
+
+                while (true) {
+
+                    boost::this_thread::interruption_point();
+
+                    if (inputQueue->read_available()) {
+
+                        auto res = executor((*inputQueue->front()));
+                        inputQueue->pop();
+
+                        // put res in output queue
+                    }
+
+                    cout << "ID -> " << id << "; Size -> " << inputQueue->read_available() << endl;
+                }
+                }
+            );
+        }
+
 
         // Pipeline -> 'ProcessingManager' {end}
         //
@@ -199,6 +238,9 @@ int main() {
         // Part of InputNetworkManager (stopping threadpool)
         networkThreadpool.interrupt_all();  /// interrupts threads
         networkThreadpool.join_all();   // join threads
+
+        stagesThreadpool.interrupt_all();  /// interrupts threads
+        stagesThreadpool.join_all();   // join threads
     }
 
     return 0;
