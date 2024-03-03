@@ -27,6 +27,8 @@ namespace Pipeline {
 
 		Stage(function<TData(TData)> callable, string name, vector<Stage> childs) : id(idTotalCounter++), callable(callable), name(name), childs(childs) {}
 
+		Stage(const Stage& other) = default;
+
 		void operator()(TData data) {
 
 			auto result = callable(data);
