@@ -10,6 +10,8 @@ project(${PROJECT} VERSION 1.0 LANGUAGES CXX)
 set (CMAKE_CXX_FLAGS "-std=c++20 -Wall ${CMAKE_CXX_FLAGS}")
 
 # dependency search
+find_package(xtensor REQUIRED)
+
 find_package(CapnProto REQUIRED)
 
 find_package(cppzmq REQUIRED)
@@ -41,6 +43,9 @@ add_executable (Source source.cpp ${HEADERS} ${SOURCES})
 # target_include_directories(Source PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 add_executable (Source2 sourceGenerator.cpp)
+
+target_include_directories(Source2 PRIVATE ${xtensor_INCLUDE_DIRS})
+target_include_directories(Source2 PRIVATE ${xtl_INCLUDE_DIRS})
 
 target_link_libraries(Source2 PRIVATE CapnProto::capnp)
 target_include_directories(Source2 PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
