@@ -1,6 +1,9 @@
 #include <iostream>
 
 #include <memory>
+#include <chrono>
+#include <thread>
+#include <stdexcept>
 
 #include <vector>
 #include <unordered_map>
@@ -20,16 +23,18 @@
 
 #include "boost/lockfree/spsc_queue.hpp"
 
-#include "boost/numeric/ublas/tensor/tensor.hpp"
-#include <boost/numeric/ublas/tensor/extents.hpp>   // extents == shape
+#include <xtensor/xarray.hpp>
+#include <xtensor/xadapt.hpp>
 
 #include "parser/parser.hpp"
 #include "pipeline/stage.hpp"
 
 using namespace std;
+using namespace chrono_literals;
 
-using TensorT = boost::numeric::ublas::tensor<double>;
-using ShapeT = boost::numeric::ublas::shape;
+using DataT = double;
+using TensorT = xt::xarray<DataT>;
+using ShapeT = xt::svector<size_t>;
 
 using spsc_queueT = boost::lockfree::spsc_queue<std::shared_ptr<TensorT>, boost::lockfree::capacity<1024>>;
 
@@ -38,8 +43,8 @@ Pipeline::Stage<TensorT> getStages() {
     ifstream fileJsonConfig("../pipeConfig.json");
 
     if (!fileJsonConfig.is_open()) {
-        cerr << "File from object ifstream \'fileJsonConfig\' not open!" << endl;
-        throw std::exception{ "FILE CONFIG NOT FOUND" };
+        cerr << "File from object ifstream \'fileJsonConfig\' not open!" << std::endl;
+        throw std::runtime_error{ "FILE CONFIG NOT FOUND" };
     }
 
     Pipeline::Stage<TensorT> source = Pipeline::JsonParser::fromFile<TensorT>(fileJsonConfig, [](std::string callableName) -> function<TensorT(TensorT)> {
@@ -54,18 +59,15 @@ Pipeline::Stage<TensorT> getStages() {
             return [](TensorT data) { return data; };
         }
         else if (callableName == "display") {
-            return [](TensorT data) { cout << data[0]; return data; };
+            return [](TensorT data) { std::cout << data[0]; return data; };
         }
 
         return [](TensorT data) { return data; };
+
         }).value_or(Pipeline::Stage<TensorT>{ [](TensorT data) {return data; }, {}, {} });
 
         return source;
 }
-
-// REFACTOR:
-// + parser
-// + queue : capacity? OR reserve
 
 int main() {
 
@@ -81,21 +83,20 @@ int main() {
 
         std::shared_ptr<spsc_queueT> rawDataQ{ new spsc_queueT };  // buffer
 
-        //boost::asio::io_service ioService;  // for threads (::run)
         boost::thread_group networkThreadpool;
         networkThreadpool.create_thread([&ctx, rawDataQ]()
             {
-                cout << "threadstart" << endl;
+                std::cout << "threadstart" << std::endl;
                 zmq::socket_t dataReceiver(ctx, zmq::socket_type::sub);
                 dataReceiver.connect("tcp://127.0.0.1:5555");
                 dataReceiver.set(zmq::sockopt::subscribe, "");
 
                 zmq::message_t msg;
-                std::vector<std::size_t> shapeVector{}; shapeVector.reserve(3);
+                ShapeT shapeVector{}; shapeVector.reserve(3);
 
                 while (true) {
 
-                    cout << "request" << endl;
+                    std::cout << "request" << endl;
 
                     boost::this_thread::interruption_point();
 
@@ -103,57 +104,62 @@ int main() {
 
                     if (!result)  // instead of assert below
                     {
-                        Sleep(1000);    // delete after debugging (and change flag)
+                        std::this_thread::sleep_for(10ms);    // delete after debugging (and change flag)
                         continue;
                     }
-                    //assert(result && "recv failed");
-
-                    std::cout << msg.to_string() << endl;
+                    
+                    auto startTimer = chrono::high_resolution_clock::now();
 
                     // create a memory buffer from the received message
                     auto buf = kj::heapArray<capnp::word>(msg.size() / sizeof(capnp::word));
                     memcpy(buf.asBytes().begin(), msg.data(), buf.asBytes().size());
-
+                                        
                     // create an input stream from the memory buffer
-                    capnp::FlatArrayMessageReader message_reader(buf);
+                    capnp::FlatArrayMessageReader message_reader(buf, capnp::ReaderOptions{9999999999999ui64, 512});
                     NDArray::Reader ndarray = message_reader.getRoot<NDArray>();
+
+                    auto capnProtoTimer = chrono::high_resolution_clock::now();
 
                     // deserialization and putting data into a tensor
                     // 
                     // shape
-                    if (ndarray.getShape().size() == 1)
-                        shapeVector.push_back(1);
-
+                    
                     for (auto&& dimm : ndarray.getShape()) {
                         shapeVector.push_back(static_cast<std::size_t>(dimm));
                     }
-                    ShapeT shapeTensor{ {shapeVector.crbegin(), shapeVector.crend()} };
-                    shapeVector.clear();
-
+                    
                     //
                     // data
-                    TensorT* tensor = new TensorT{ shapeTensor };
-
-                    auto data = ndarray.getData().begin();
-                    for (size_t i(0ul); i < tensor->extents().product(); ++i)
-                    {
-                        (*tensor)[i] = *(data++);  // I have not been able to use std::copy here :(
-                    }
+                    std::shared_ptr<std::vector<DataT>> data{ new std::vector<DataT> };
+                    data->resize(ndarray.getData().size() / sizeof(DataT));
+                    std::copy((DataT*)(&(ndarray.getData().asBytes()[0])), (DataT*)(&(ndarray.getData().asBytes()[0]) + ndarray.getData().size()), data->begin());
                     
-                    std::shared_ptr<TensorT> temp{ tensor };
-                    while (!rawDataQ->push(temp)) {}
+                    auto tensorAdapter = xt::adapt_smart_ptr(data->data(), shapeVector, data);
+                    std::shared_ptr<TensorT> tensor{ new TensorT { tensorAdapter } };
+                    shapeVector.clear();
 
-                    msg.rebuild();  // CHECK THIS
+                    auto prepareTensorTimer = chrono::high_resolution_clock::now();
+
+                    while (!rawDataQ->push(tensor)) {}
+
+                    auto finishTimer = chrono::high_resolution_clock::now();
+
+                    std::cout << "Time measures:\n"
+                        << "\tCap\'n proto work time -> " << std::chrono::duration<double, milli>(capnProtoTimer - startTimer).count() << "ms\n"
+                        << "\tTensor init time -> " << std::chrono::duration<double, milli>(prepareTensorTimer - capnProtoTimer).count() << "ms\n"
+                        << "\tTotal time spent -> " << std::chrono::duration<double, milli>(finishTimer - startTimer).count() << "ms" << std::endl;
+
+                    msg.rebuild();
                 }
             }
         );
 
-        cout << "size queue -> " << rawDataQ->read_available() << endl;
+        std::cout << "size queue -> " << rawDataQ->read_available() << std::endl;
 
-        cout << "Wait while input queue will filled" << endl;
-        Sleep(10000);    // work emulation
+        std::cout << "Wait while input queue will filled" << std::endl;
+        std::this_thread::sleep_for(10000ms); // work emulation
 
-        cout << "size queue -> " << rawDataQ->read_available() << endl;
+        std::cout << "size queue -> " << rawDataQ->read_available() << std::endl;
 
         // InputNetworkManager {end}
         // 
@@ -161,8 +167,8 @@ int main() {
 
         // Creating queue for each stage
         Pipeline::Stage<TensorT> stages = getStages();
-        cout << stages << endl;
-        cout << "ID -> " << stages.childs[1].id << endl;
+        std::cout << stages << std::endl;
+        std::cout << "ID -> " << stages.childs[1].id << std::endl;
 
         // create map for stages launch in multi-threading
 
@@ -202,12 +208,12 @@ int main() {
         // put stage in thread
         for (auto stageIt = stagesMap.begin(); stageIt != stagesMap.end(); ++stageIt) {
 
-            cout << "Stage id -> " << stageIt->second.id << "; Name -> " << stageIt->second.name << endl;
+            std::cout << "Stage id -> " << stageIt->second.id << "; Name -> " << stageIt->second.name << std::endl;
 
             // preparing the necessary objects
             auto&& inputQueue = inputQueueMap.at(stageIt->second.id);
             auto&& outputQueues = outputQueueMap.at(stageIt->second.id);
-            auto&& executor = stageIt->second.callable; // copy or move?? (TODO move)
+            auto&& executor = std::move(stageIt->second.callable); // copy or move?? (TODO move)
 
             // create thread
             stagesThreadpool.create_thread([id = stageIt->first, inputQueue, outputQueues, executor]() {
@@ -218,7 +224,10 @@ int main() {
 
                     if (inputQueue->read_available()) {
 
-                        cout << "Thread id -> " << id << "; get work" << endl;
+                        std::cout << "Thread id -> " << id << "; get work" << std::endl;
+
+                        auto startTimer = chrono::high_resolution_clock::now();
+
                         auto&& res = executor((*inputQueue->front()));
                         auto&& temp = std::shared_ptr<TensorT>{ new TensorT(res) };
                         for (auto&& q : outputQueues) {
@@ -228,14 +237,12 @@ int main() {
 
                         inputQueue->pop();
 
-                        // put res in output queue
+                        auto finishTimer = chrono::high_resolution_clock::now();
+                        std::cout << "\tThread cycle work time -> " << std::chrono::duration<double, milli>(finishTimer - startTimer).count() << "ms\n" << std::endl;
                     }
                     else {
-                        //cout << "Thread id -> " << id << "; sleep" << endl;
-                        Sleep(1000);
+                        std::this_thread::sleep_for(100ms);
                     }
-
-                    //cout << "ID -> " << id << "; Size -> " << inputQueue->read_available() << endl;
                 }
                 }
             );
@@ -248,8 +255,8 @@ int main() {
         // 
         // Part of InputNetworkManager (stopping threadpool)
 
-        cout << "Wait end of work" << endl;
-        Sleep(15000);
+        std::cout << "Wait end of work" << std::endl;
+        std::this_thread::sleep_for(10000ms);
 
         networkThreadpool.interrupt_all();  /// interrupts threads
         networkThreadpool.join_all();   // join threads
