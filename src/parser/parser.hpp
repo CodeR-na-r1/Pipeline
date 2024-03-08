@@ -62,35 +62,24 @@ namespace Pipeline {
 							queue.push(&child);
 						}
 					}
-					//else if (value.is_string()) {
-
-					//}
+					else if (value.is_string()) {
+						auto callableNameIt = std::find_if(stages.begin(), stages.end(), [value](auto a) { return a["name"] == value; });
+						if (callableNameIt == stages.end()) {
+							return std::nullopt;
+						}
+						current->childs.push_back({ chooser((*callableNameIt)["callable"]), value, {} });
+						queue.push(&(current->childs[0]));
+					}
 					else {
 						return std::nullopt;
 					}
 				}
-				//auto connectionInfo = std::find();
-
-				// TODO: impl beautiful find child in json object
-				// TODO: create childs and push ref on him in queue
-
-				//for (auto&& it: connections) {
-
-					//current.childs.push_back(child);
-				//}
-
-				// code here;
 
 				queue.pop();
 			}
 
 			return res;
 		}
-
-		//template <>
-		//static Pipeline<> fromFile() {
-		
-		//}
 	};
 
 }
