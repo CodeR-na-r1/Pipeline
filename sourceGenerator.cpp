@@ -26,6 +26,8 @@
 #include <xtensor/xarray.hpp>
 #include <xtensor/xadapt.hpp>
 
+#include "opencv2/opencv.hpp"
+
 #include "parser/parser.hpp"
 #include "pipeline/stage.hpp"
 
@@ -76,6 +78,8 @@ int main() {
         // 
         // prepare getting data from network via zmq
 
+        cv::Mat img;
+
         const char* ip = "127.0.0.1";
         const int port = 5555;
 
@@ -96,7 +100,7 @@ int main() {
 
                 while (true) {
 
-                    std::cout << "request" << endl;
+                    //std::cout << "request" << endl;
 
                     boost::this_thread::interruption_point();
 
