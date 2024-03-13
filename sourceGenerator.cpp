@@ -31,6 +31,8 @@
 #include "parser/parser.hpp"
 #include "pipeline/stage.hpp"
 
+#include "container/vyukov_mpmc_cycle_queue.h"
+
 using namespace std;
 using namespace chrono_literals;
 
@@ -38,7 +40,16 @@ using DataT = double;
 using TensorT = xt::xarray<DataT>;
 using ShapeT = xt::svector<size_t>;
 
+using MPMCQueue = cds::container::VyukovMPMCCycleQueue<
+    std::shared_ptr<TensorT>, typename cds::container::vyukov_queue::make_traits<
+        cds::opt::buffer<
+            cds::opt::v::initialized_static_buffer<void*, 1024>>,
+        cds::opt::item_counter< cds::atomicity::item_counter>
+    >::type>;
+
 using spsc_queueT = boost::lockfree::spsc_queue<std::shared_ptr<TensorT>, boost::lockfree::capacity<1024>>;
+
+using queueT = MPMCQueue;
 
 Pipeline::Stage<TensorT> getStages() {
 
@@ -77,15 +88,13 @@ int main() {
         // InputNetworkManager {begin}
         // 
         // prepare getting data from network via zmq
-
-        cv::Mat img;
-
+                
         const char* ip = "127.0.0.1";
         const int port = 5555;
 
         zmq::context_t ctx;
 
-        std::shared_ptr<spsc_queueT> rawDataQ{ new spsc_queueT };  // buffer
+        std::shared_ptr<queueT> rawDataQ{ new queueT };  // buffer
 
         boost::thread_group networkThreadpool;
         networkThreadpool.create_thread([&ctx, rawDataQ]()
@@ -158,12 +167,12 @@ int main() {
             }
         );
 
-        std::cout << "size queue -> " << rawDataQ->read_available() << std::endl;
+        std::cout << "size queue -> " << rawDataQ->size() << std::endl;
 
         std::cout << "Wait while input queue will filled" << std::endl;
         std::this_thread::sleep_for(10000ms); // work emulation
 
-        std::cout << "size queue -> " << rawDataQ->read_available() << std::endl;
+        std::cout << "size queue -> " << rawDataQ->size() << std::endl;
 
         // InputNetworkManager {end}
         // 
@@ -177,8 +186,8 @@ int main() {
         // create map for stages launch in multi-threading
 
         std::unordered_map<size_t, Pipeline::Stage<TensorT>> stagesMap; // id ->  stage by id
-        std::unordered_map<size_t, std::shared_ptr<spsc_queueT>> inputQueueMap; // get parent queue for current stage by id (i.e. get input queue)
-        std::unordered_map<size_t, std::vector<std::shared_ptr<spsc_queueT>>> outputQueueMap; // get vector of child queues for current stage by id (i.e. get output queues)
+        std::unordered_map<size_t, std::shared_ptr<queueT>> inputQueueMap; // get parent queue for current stage by id (i.e. get input queue)
+        std::unordered_map<size_t, std::vector<std::shared_ptr<queueT>>> outputQueueMap; // get vector of child queues for current stage by id (i.e. get output queues)
 
         // fill map's
         inputQueueMap.insert({ 0, rawDataQ });
@@ -195,7 +204,7 @@ int main() {
 
             for (auto&& child: current->childs) {
 
-                std::shared_ptr<spsc_queueT> temp{ new spsc_queueT };
+                std::shared_ptr<queueT> temp{ new queueT };
                 outputQueueMap.at(current->id).push_back(temp);
                 inputQueueMap.insert({ child.id , temp });
                 queue.push(&child);
@@ -226,26 +235,28 @@ int main() {
 
                     boost::this_thread::interruption_point();
 
-                    if (inputQueue->read_available()) {
+                    if (inputQueue->size()) {
 
                         std::cout << "Thread id -> " << id << "; get work" << std::endl;
 
                         auto startTimer = chrono::high_resolution_clock::now();
 
-                        auto&& res = executor((*inputQueue->front()));
-                        auto&& temp = std::shared_ptr<TensorT>{ new TensorT(res) };
-                        for (auto&& q : outputQueues) {
+                        std::shared_ptr<TensorT> argData;
+                        if (inputQueue->pop(argData)) { // else queue is empty (another thread may have received the value earlier)
 
-                            while (!q->push(temp)) {}
+                            auto&& res = executor(*argData);
+                            auto&& temp = std::shared_ptr<TensorT>{ new TensorT(res) };
+                            for (auto&& q : outputQueues) {
+
+                                while (!q->push(temp)) {}
+                            }
+
+                            auto finishTimer = chrono::high_resolution_clock::now();
+                            std::cout << "\tThread cycle work time -> " << std::chrono::duration<double, milli>(finishTimer - startTimer).count() << "ms\n" << std::endl;
                         }
-
-                        inputQueue->pop();
-
-                        auto finishTimer = chrono::high_resolution_clock::now();
-                        std::cout << "\tThread cycle work time -> " << std::chrono::duration<double, milli>(finishTimer - startTimer).count() << "ms\n" << std::endl;
                     }
                     else {
-                        std::this_thread::sleep_for(100ms);
+                        std::this_thread::sleep_for(5ms);
                     }
                 }
                 }

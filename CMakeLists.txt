@@ -46,6 +46,8 @@ add_executable (Source source.cpp ${HEADERS} ${SOURCES})
 
 add_executable (Source2 sourceGenerator.cpp)
 
+target_include_directories(Source2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/cds)
+
 target_link_libraries(Source2 PRIVATE ${OpenCV_LIBS})
 target_include_directories(Source2 PRIVATE ${OpenCV_INCLUDE_DIRS})
 
