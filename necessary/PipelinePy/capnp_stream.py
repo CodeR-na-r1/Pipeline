@@ -25,7 +25,7 @@ def array_to_capnp(arr):
     ndarray.data = arr.tobytes()
     print(f"sizeArr -> {arr.shape}")
     print(f"sizeData -> {len(ndarray.data)}")
-    # print(arr)
+    #print(arr[0][0][0])
     ndarray.dtype = getattr(array_schema.NDArray.DType, arr.dtype.name)
     print(ndarray.dtype)
     ndarray.timestamp = int(time.time() * 10**7)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--rows", required=False, type=int, default=1000)
     parser.add_argument("-c", "--cols", required=False, type=int, default=1000)
     parser.add_argument("-e", "--depth", required=False, type=int, default=1)
-    parser.add_argument("-s", "--sleep", required=False, type=float, default=0.05)
+    parser.add_argument("-s", "--sleep", required=False, type=float, default=0.01)
     parser.add_argument(
         "-t",
         "--type",
