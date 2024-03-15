@@ -26,15 +26,21 @@
 #include <xtensor/xarray.hpp>
 #include <xtensor/xadapt.hpp>
 
+#include "json/json.hpp"
+
 #include "opencv2/opencv.hpp"
 
 #include "parser/parser.hpp"
 #include "pipeline/stage.hpp"
 
-#include "container/vyukov_mpmc_cycle_queue.h"
+#include "cds/container/vyukov_mpmc_cycle_queue.h"
+
+#include "NetworkManager/NetworkReceptionManager.hpp"
 
 using namespace std;
 using namespace chrono_literals;
+
+using json = nlohmann::json;
 
 using DataT = double;
 using TensorT = xt::xarray<DataT>;
@@ -72,7 +78,7 @@ Pipeline::Stage<TensorT> getStages() {
             return [](TensorT data) { return data; };
         }
         else if (callableName == "display") {
-            return [](TensorT data) { std::cout << data[0]; return data; };
+            return [](TensorT data) { /*std::cout << data[0];*/ return data; };
         }
 
         return [](TensorT data) { return data; };
@@ -88,7 +94,7 @@ int main() {
         // InputNetworkManager {begin}
         // 
         // prepare getting data from network via zmq
-                
+
         const char* ip = "127.0.0.1";
         const int port = 5555;
 
@@ -151,10 +157,11 @@ int main() {
 
                     auto finishTimer = chrono::high_resolution_clock::now();
 
-                    std::cout << "Time measures:\n"
+                    /*std::cout << "Time measures:\n"
                         << "\tCap\'n proto work time -> " << std::chrono::duration<double, milli>(capnProtoTimer - startTimer).count() << "ms\n"
                         << "\tTensor init time -> " << std::chrono::duration<double, milli>(prepareTensorTimer - capnProtoTimer).count() << "ms\n"
                         << "\tTotal time spent -> " << std::chrono::duration<double, milli>(finishTimer - startTimer).count() << "ms" << std::endl;
+                    */
                 }
             }
         );
@@ -162,7 +169,7 @@ int main() {
         std::cout << "size queue -> " << rawDataQ->size() << std::endl;
 
         std::cout << "Wait while input queue will filled" << std::endl;
-        std::this_thread::sleep_for(10000ms); // work emulation
+        std::this_thread::sleep_for(6000ms); // work emulation
 
         std::cout << "size queue -> " << rawDataQ->size() << std::endl;
 
@@ -213,7 +220,7 @@ int main() {
         // put stage in thread
         for (auto stageIt = stagesMap.begin(); stageIt != stagesMap.end(); ++stageIt) {
 
-            std::cout << "Stage id -> " << stageIt->second.id << "; Name -> " << stageIt->second.name << std::endl;
+            //std::cout << "Stage id -> " << stageIt->second.id << "; Name -> " << stageIt->second.name << std::endl;
 
             // preparing the necessary objects
             auto&& inputQueue = inputQueueMap.at(stageIt->second.id);
@@ -229,7 +236,7 @@ int main() {
 
                     if (inputQueue->size()) {
 
-                        std::cout << "Thread id -> " << id << "; get work" << std::endl;
+                        //std::cout << "Thread id -> " << id << "; get work" << std::endl;
 
                         auto startTimer = chrono::high_resolution_clock::now();
 
@@ -244,7 +251,7 @@ int main() {
                             }
 
                             auto finishTimer = chrono::high_resolution_clock::now();
-                            std::cout << "\tThread cycle work time -> " << std::chrono::duration<double, milli>(finishTimer - startTimer).count() << "ms\n" << std::endl;
+                            //std::cout << "\tThread cycle work time -> " << std::chrono::duration<double, milli>(finishTimer - startTimer).count() << "ms\n" << std::endl;
                         }
                     }
                     else {
@@ -255,15 +262,55 @@ int main() {
             );
         }
 
-
         // Pipeline -> 'ProcessingManager' {end}
         //
+        // Pipeline -> 'MonitoringManager' {begin}
+
+        // Creating a thread to monitor the operation of the pipeline
+        // collects statistics into a json file
+        // then sends via cppzmq
+        boost::thread monitoringThread([&stagesMap, &inputQueueMap]() {
+
+            const json pattern = {
+                { "IdToCallable", {}},
+                { "QueueLoad", {}},
+                { "ThreadTimePerOp", {}}
+            };
+
+            while (true) {
+
+                boost::this_thread::interruption_point();
+
+                json monitoring = pattern;
+
+                auto&& idCallableObj = monitoring["IdToCallable"];
+                auto&& queueLoad = monitoring["QueueLoad"];
+                auto&& threadTimePerOp = monitoring["ThreadTimePerOp"];
+
+                for (auto it = stagesMap.begin(); it != stagesMap.end(); ++it) {
+
+                    idCallableObj.emplace(std::to_string(it->second.id), it->second.name);                    
+                    queueLoad.emplace(std::to_string(it->second.id), inputQueueMap.at(it->second.id)->size());
+                }
+
+                cout << "Monitoring thread info:\n" << monitoring.dump(8) << endl;
+
+                std::this_thread::sleep_for(100ms);
+            }
+            }
+        );
+
+        // Pipeline -> 'MonitoringManager' {end}
+        // 
         //---------
         // 
-        // Part of InputNetworkManager (stopping threadpool)
+        // Part of all Manager's (stopping threadpool)
 
         std::cout << "Wait end of work" << std::endl;
-        std::this_thread::sleep_for(10000ms);
+        std::this_thread::sleep_for(20000ms);
+
+        monitoringThread.interrupt();
+        monitoringThread.join();
 
         networkThreadpool.interrupt_all();  /// interrupts threads
         networkThreadpool.join_all();   // join threads
