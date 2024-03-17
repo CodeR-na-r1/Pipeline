@@ -46,6 +46,8 @@ using DataT = double;
 using TensorT = xt::xarray<DataT>;
 using ShapeT = xt::svector<size_t>;
 
+using StageDataT = std::shared_ptr<TensorT>;
+
 using MPMCQueue = cds::container::VyukovMPMCCycleQueue<
     std::shared_ptr<TensorT>, typename cds::container::vyukov_queue::make_traits<
         cds::opt::buffer<
@@ -57,7 +59,7 @@ using spsc_queueT = boost::lockfree::spsc_queue<std::shared_ptr<TensorT>, boost:
 
 using queueT = MPMCQueue;
 
-Pipeline::Stage<TensorT> getStages() {
+Pipeline::Stage<StageDataT> getStages() {
 
     ifstream fileJsonConfig("../pipeConfig.json");
 
@@ -66,24 +68,24 @@ Pipeline::Stage<TensorT> getStages() {
         throw std::runtime_error{ "FILE CONFIG NOT FOUND" };
     }
 
-    Pipeline::Stage<TensorT> source = Pipeline::JsonParser::fromFile<TensorT>(fileJsonConfig, [](std::string callableName) -> function<TensorT(TensorT)> {
+    Pipeline::Stage<StageDataT> source = Pipeline::JsonParser::fromFile<StageDataT>(fileJsonConfig, [](std::string callableName) -> function<StageDataT(StageDataT)> {
 
         if (callableName == "getImage") {
-            return [](TensorT data) { return data; };
+            return [](StageDataT data) { return data; };
         }
         else if (callableName == "rgb2gray") {
-            return [](TensorT data) { return data; };
+            return [](StageDataT data) { return data; };
         }
         else if (callableName == "gaussian") {
-            return [](TensorT data) { return data; };
+            return [](StageDataT data) { return data; };
         }
         else if (callableName == "display") {
-            return [](TensorT data) { /*std::cout << data[0];*/ return data; };
+            return [](StageDataT data) { /*std::cout << data[0];*/ return data; };
         }
 
-        return [](TensorT data) { return data; };
+        return [](StageDataT data) { return data; };
 
-        }).value_or(Pipeline::Stage<TensorT>{ [](TensorT data) {return data; }, {}, {} });
+        }).value_or(Pipeline::Stage<StageDataT>{ [](StageDataT data) {return data; }, {}, {} });
 
         return source;
 }
@@ -91,6 +93,7 @@ Pipeline::Stage<TensorT> getStages() {
 int main() {
 
     {
+
         // InputNetworkManager {begin}
         // 
         // prepare getting data from network via zmq
@@ -178,25 +181,74 @@ int main() {
         // Pipeline -> 'ProcessingManager' {begin}
 
         // Creating queue for each stage
-        Pipeline::Stage<TensorT> stages = getStages();
+        Pipeline::Stage<StageDataT> stages = getStages();
         std::cout << stages << std::endl;
         std::cout << "ID -> " << stages.childs[1].id << std::endl;
 
         // create map for stages launch in multi-threading
 
-        std::unordered_map<size_t, Pipeline::Stage<TensorT>> stagesMap; // id ->  stage by id
+        std::unordered_map<size_t, Pipeline::Stage<StageDataT>> stagesMap; // id ->  stage by id
         std::unordered_map<size_t, std::shared_ptr<queueT>> inputQueueMap; // get parent queue for current stage by id (i.e. get input queue)
         std::unordered_map<size_t, std::vector<std::shared_ptr<queueT>>> outputQueueMap; // get vector of child queues for current stage by id (i.e. get output queues)
+
+        struct Measurements {
+        
+            uint64_t counter;
+            double accumulator;
+            std::mutex guard;
+
+            /* blocking method 
+            * push time and increment counter
+            */
+            void push(double value) {
+
+                guard.lock();
+
+                accumulator += value;
+                ++counter;
+
+                guard.unlock();
+            }
+
+            /* blocking method 
+            * reset accumulator and counter
+            * return average time
+            */
+            double pull() {
+
+                if (counter == 0)
+                    return 0.0;
+
+                guard.lock();
+
+                auto acc = accumulator;
+                accumulator = 0.0;
+
+                auto count = counter;
+                counter = 0;
+
+                guard.unlock();
+
+                if (count != 0)
+                    return acc / count;
+                else
+                    return 0.0;
+            }
+        };
+        
+        std::unordered_map<size_t, std::shared_ptr<Measurements>> threadMeasurementsMap;    // shared_ptr because mutex is not copyable
 
         // fill map's
         inputQueueMap.insert({ 0, rawDataQ });
 
-        std::queue<Pipeline::Stage<TensorT>*> queue;
+        std::queue<Pipeline::Stage<StageDataT>*> queue;
         queue.push(&stages);
 
         while (!queue.empty()) {
 
             auto current = queue.front();
+
+            threadMeasurementsMap.insert({ current->id, std::shared_ptr<Measurements>{new Measurements{}} });
 
             outputQueueMap.insert({ current->id, {} });
             outputQueueMap.at(current->id).reserve(current->childs.size());
@@ -226,9 +278,10 @@ int main() {
             auto&& inputQueue = inputQueueMap.at(stageIt->second.id);
             auto&& outputQueues = outputQueueMap.at(stageIt->second.id);
             auto&& executor = std::move(stageIt->second.callable); // copy or move?? (TODO move)
+            auto&& measurements = threadMeasurementsMap.at(stageIt->second.id);
 
             // create thread
-            stagesThreadpool.create_thread([id = stageIt->first, inputQueue, outputQueues, executor]() {
+            stagesThreadpool.create_thread([id = stageIt->first, inputQueue, outputQueues, executor, measurements]() {
 
                 while (true) {
 
@@ -243,14 +296,16 @@ int main() {
                         std::shared_ptr<TensorT> argData;
                         if (inputQueue->pop(argData)) { // else queue is empty (another thread may have received the value earlier)
 
-                            auto&& res = executor(*argData);
-                            auto&& temp = std::shared_ptr<TensorT>{ new TensorT(res) };
+                            auto&& res = executor(argData);
                             for (auto&& q : outputQueues) {
 
-                                while (!q->push(temp)) {}
+                                while (!q->push(res)) {}
                             }
 
                             auto finishTimer = chrono::high_resolution_clock::now();
+
+                            measurements->push(std::chrono::duration<double, milli>(finishTimer - startTimer).count());
+
                             //std::cout << "\tThread cycle work time -> " << std::chrono::duration<double, milli>(finishTimer - startTimer).count() << "ms\n" << std::endl;
                         }
                     }
@@ -269,13 +324,17 @@ int main() {
         // Creating a thread to monitor the operation of the pipeline
         // collects statistics into a json file
         // then sends via cppzmq
-        boost::thread monitoringThread([&stagesMap, &inputQueueMap]() {
+        boost::thread monitoringThread([&stagesMap, &inputQueueMap, &threadMeasurementsMap]() {
 
-            const json pattern = {
+            json pattern = {
                 { "IdToCallable", {}},
                 { "QueueLoad", {}},
                 { "ThreadTimePerOp", {}}
             };
+
+            for (auto it = stagesMap.begin(); it != stagesMap.end(); ++it) {
+                pattern["IdToCallable"].emplace(std::to_string(it->second.id), it->second.name);
+            }
 
             while (true) {
 
@@ -283,19 +342,18 @@ int main() {
 
                 json monitoring = pattern;
 
-                auto&& idCallableObj = monitoring["IdToCallable"];
                 auto&& queueLoad = monitoring["QueueLoad"];
                 auto&& threadTimePerOp = monitoring["ThreadTimePerOp"];
 
                 for (auto it = stagesMap.begin(); it != stagesMap.end(); ++it) {
 
-                    idCallableObj.emplace(std::to_string(it->second.id), it->second.name);                    
                     queueLoad.emplace(std::to_string(it->second.id), inputQueueMap.at(it->second.id)->size());
+                    threadTimePerOp.emplace(std::to_string(it->second.id), threadMeasurementsMap.at(it->second.id)->pull());
                 }
 
                 cout << "Monitoring thread info:\n" << monitoring.dump(8) << endl;
 
-                std::this_thread::sleep_for(100ms);
+                std::this_thread::sleep_for(1000ms);
             }
             }
         );
