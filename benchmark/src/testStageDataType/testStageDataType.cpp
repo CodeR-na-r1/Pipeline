@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <conio.h>
+
 #include <vector>
 
 #include <memory>
@@ -35,7 +37,7 @@ int main() {
 
         initializers.emplace_back(new Benchmark::Initializator::UtensorInitializer<DataT>);
         initializers.emplace_back(new Benchmark::Initializator::XtensorInitializer<DataT>);
-        initializers.emplace_back(new Benchmark::Initializator::OpencvInitializer<DataT>);
+        //initializers.emplace_back(new Benchmark::Initializator::OpencvInitializer<DataT>);
         
         zmq::context_t ctx;
 
@@ -93,9 +95,16 @@ int main() {
 
         std::cout << "Enter any key for stop benchmark...";
 
-        std::getchar();
+        getch();
 
+        worker.interrupt();
         worker.join();
+
+        std::cout << "\nInformation about record in file:" << "\n\tRows - record for each test\n" << "\tCols - measures:\n\t\t1 col = count of elements in message" << std::endl;
+        std::size_t counter{ 2 };
+        for (auto&& init : initializers) {
+            std::cout << "\t\t" << counter++ << " col = time for " << typeid(*init).name() << std::endl;
+        }
     }
 
     std::ofstream file("initMeasurements.txt");
