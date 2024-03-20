@@ -32,6 +32,7 @@ namespace Benchmark {
 
 			virtual void operator()(std::shared_ptr<zmq::message_t> msg, NDArray::Reader& ndarray) override {
 
+				// initialization code
 				if (ndarray.getShape().size() == 1)
 					shapeVector.push_back(1);
 

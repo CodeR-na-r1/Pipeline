@@ -37,7 +37,7 @@ int main() {
 
         initializers.emplace_back(new Benchmark::Initializator::UtensorInitializer<DataT>);
         initializers.emplace_back(new Benchmark::Initializator::XtensorInitializer<DataT>);
-        //initializers.emplace_back(new Benchmark::Initializator::OpencvInitializer<DataT>);
+        initializers.emplace_back(new Benchmark::Initializator::OpencvInitializer<DataT>);
         
         zmq::context_t ctx;
 
@@ -120,7 +120,10 @@ int main() {
         for (auto&& record : measurement) {
 
             if (!isFirst) file << "\t";
-            file << record;
+            if (isFirst)
+                file << static_cast<int64_t>(record);
+            else
+                file << record;
             isFirst = false;
         }
         file << std::endl;
