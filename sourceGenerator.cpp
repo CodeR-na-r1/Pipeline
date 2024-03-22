@@ -11,12 +11,6 @@
 #include "zmq.hpp"
 #include "zmq_addon.hpp"
 
-#include "scheme/ndarray.capnp.h"
-#include "capnp/serialize.h"
-#include <capnp/message.h>
-#include <capnp/serialize.h>
-#include <kj/std/iostream.h>
-
 #include "boost/asio.hpp"
 #include "boost/asio/thread_pool.hpp"
 #include <boost/thread/thread.hpp>
@@ -24,7 +18,6 @@
 #include "boost/lockfree/spsc_queue.hpp"
 
 #include <xtensor/xarray.hpp>
-#include <xtensor/xadapt.hpp>
 
 #include "json/json.hpp"
 
@@ -35,7 +28,8 @@
 
 #include "cds/container/vyukov_mpmc_cycle_queue.h"
 
-#include "NetworkManager/NetworkReceptionManager.hpp"
+#include "ProtoManager/DeserializationManager.hpp"
+#include "NetworkManager/NetworkReceiverManager.hpp"
 
 using namespace std;
 using namespace chrono_literals;
@@ -93,7 +87,6 @@ Pipeline::Stage<StageDataT> getStages() {
 int main() {
 
     {
-
         // InputNetworkManager {begin}
         // 
         // prepare getting data from network via zmq
@@ -113,8 +106,8 @@ int main() {
                 dataReceiver.connect("tcp://127.0.0.1:5555");
                 dataReceiver.set(zmq::sockopt::subscribe, "");
 
+                Pipeline::NDArrayDeserializator<TensorT> deserializator;
                 std::shared_ptr<zmq::message_t> msg{};
-                ShapeT shapeVector{}; shapeVector.reserve(3);
 
                 while (true) {
 
@@ -132,27 +125,7 @@ int main() {
                     
                     auto startTimer = chrono::high_resolution_clock::now();
 
-                    // create a pointer to aligned data from the received message
-                    auto alignedPtr = kj::ArrayPtr<const capnp::word>((capnp::word*)msg->data(), msg->size() / sizeof(capnp::word));
-
-                    // create an input stream from the memory buffer
-                    capnp::FlatArrayMessageReader message_reader(alignedPtr, capnp::ReaderOptions{9999999999999ui64, 512});
-                    NDArray::Reader ndarray = message_reader.getRoot<NDArray>();
-
-                    auto capnProtoTimer = chrono::high_resolution_clock::now();
-
-                    // deserialization and putting data into a tensor
-                    // 
-                    // shape
-                    for (auto&& dimm : ndarray.getShape()) {
-                        shapeVector.push_back(static_cast<std::size_t>(dimm));
-                    }
-                    
-                    //
-                    // data
-                    auto tensorAdapter = xt::adapt_smart_ptr((double*)(&ndarray.getData().asBytes()[0]), shapeVector, msg);
-                    std::shared_ptr<TensorT> tensor{ new TensorT { tensorAdapter} };
-                    shapeVector.clear();
+                    auto tensor = deserializator(msg);
 
                     auto prepareTensorTimer = chrono::high_resolution_clock::now();
 
@@ -160,11 +133,9 @@ int main() {
 
                     auto finishTimer = chrono::high_resolution_clock::now();
 
-                    /*std::cout << "Time measures:\n"
-                        << "\tCap\'n proto work time -> " << std::chrono::duration<double, milli>(capnProtoTimer - startTimer).count() << "ms\n"
-                        << "\tTensor init time -> " << std::chrono::duration<double, milli>(prepareTensorTimer - capnProtoTimer).count() << "ms\n"
+                    std::cout << "Time measures:\n"
+                        << "\tTensor init time -> " << std::chrono::duration<double, milli>(prepareTensorTimer - startTimer).count() << "ms\n"
                         << "\tTotal time spent -> " << std::chrono::duration<double, milli>(finishTimer - startTimer).count() << "ms" << std::endl;
-                    */
                 }
             }
         );
