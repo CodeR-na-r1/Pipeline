@@ -15,7 +15,7 @@ namespace Benchmark {
 		public:
 
 			/* return its running time in milliseconds */
-			double bench(std::shared_ptr<zmq::message_t> msg, NDArray::Reader& ndarray) {
+			double bench(std::shared_ptr<zmq::message_t> msg, const NDArray::Reader& ndarray) {
 
 				auto startTimer = std::chrono::high_resolution_clock::now();
 
@@ -27,7 +27,7 @@ namespace Benchmark {
 				return time;
 			}
 
-			virtual void operator()(std::shared_ptr<zmq::message_t> msg, NDArray::Reader& ndarray) = 0;
+			virtual void operator()(std::shared_ptr<zmq::message_t> msg, const NDArray::Reader& ndarray) = 0;
 
 			virtual T getData(size_t idx) = 0;
 		};

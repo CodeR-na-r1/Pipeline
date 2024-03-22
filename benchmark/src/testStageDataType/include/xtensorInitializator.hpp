@@ -13,7 +13,7 @@ namespace Benchmark {
 		class XtensorInitializer : public IInitializer<T> {
 
 			std::shared_ptr<xt::xarray<T>> data;
-			xt::svector<size_t> shape;
+			xt::svector<std::size_t> shape;
 
 		public:
 
@@ -22,14 +22,14 @@ namespace Benchmark {
 				shape.reserve(3);
 			}
 
-			virtual void operator()(std::shared_ptr<zmq::message_t> msg, NDArray::Reader& ndarray) override {
+			virtual void operator()(std::shared_ptr<zmq::message_t> msg, const NDArray::Reader& ndarray) override {
 
 				// initialization code
 				for (auto&& dimm : ndarray.getShape()) {
-					shape.push_back(static_cast<size_t>(dimm));
+					shape.push_back(static_cast<std::size_t>(dimm));
 				}
 
-				auto tensorAdapter = xt::adapt_smart_ptr((double*)(&ndarray.getData().asBytes()[0]), shape, msg);
+				auto tensorAdapter = xt::adapt_smart_ptr((T*)(&ndarray.getData().asBytes()[0]), shape, msg);
 				data.reset(new xt::xarray<T>{ tensorAdapter });
 
 				shape.clear();

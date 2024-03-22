@@ -27,7 +27,7 @@ namespace Benchmark {
 
 			}
 
-			virtual void operator()(std::shared_ptr<zmq::message_t> msg, NDArray::Reader& ndarray) override {
+			virtual void operator()(std::shared_ptr<zmq::message_t> msg, const NDArray::Reader& ndarray) override {
 
 				// initialization code
 				assert(ndarray.getShape().size() == 2 && "Shape for opencv::Mat not correct");	// compile-time check
@@ -42,7 +42,7 @@ namespace Benchmark {
 				
 				dataOrig = msg;	// save ptr, because cv::Mat not copy data
 
-				data = cv::Mat(shape, dType, (void*)(&ndarray.getData().asBytes()[0]));
+				data = cv::Mat(shape, dType, (void*)(&ndarray.getData().asBytes()[0])).clone();	// clone for deep copy
 			}
 
 			virtual T getData(size_t idx) override {
