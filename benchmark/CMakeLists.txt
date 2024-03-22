@@ -22,25 +22,24 @@ find_package(Boost 1.70 REQUIRED COMPONENTS ALL)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
-add_executable (testLockfreeQueues src/testLockfreeQueues.cpp)
-add_executable (testStageDataType src/testStageDataType.cpp)
+add_executable (testLockfreeQueues src/testLockfreeQueues/testLockfreeQueues.cpp)
+add_executable (testStageDataType src/testStageDataType/testStageDataType.cpp)
 
-target_link_libraries(testLockfreeQueues PUBLIC ${OpenCV_LIBS})
-target_link_libraries(testStageDataType PUBLIC ${OpenCV_LIBS})
-include_directories(${OpenCV_INCLUDE_DIRS})
+target_include_directories(testStageDataType PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/testStageDataType/include)
 
-include_directories(${xtensor_INCLUDE_DIRS})
-include_directories(${xtl_INCLUDE_DIRS})
+target_link_libraries(testStageDataType PRIVATE ${OpenCV_LIBS})
+target_include_directories(testStageDataType PRIVATE ${OpenCV_INCLUDE_DIRS})
 
-target_link_libraries(testLockfreeQueues PUBLIC CapnProto::capnp)
-target_link_libraries(testStageDataType PUBLIC CapnProto::capnp)
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include_directories(${CAPNP_INCLUDE_DIRS})
+target_include_directories(testStageDataType PRIVATE ${xtensor_INCLUDE_DIRS})
+target_include_directories(testStageDataType PRIVATE ${xtl_INCLUDE_DIRS})
 
-target_link_libraries(testLockfreeQueues PUBLIC cppzmq ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(testStageDataType PUBLIC cppzmq ${CMAKE_THREAD_LIBS_INIT})
-include_directories(${cppzmq_INCLUDE_DIR})
+target_link_libraries(testStageDataType PRIVATE CapnProto::capnp)
+target_include_directories(testStageDataType PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(testStageDataType PRIVATE ${CAPNP_INCLUDE_DIRS})
 
-target_link_libraries(testLockfreeQueues PUBLIC ${Boost_LIBRARIES})
-target_link_libraries(testStageDataType PUBLIC ${Boost_LIBRARIES})
+target_link_libraries(testStageDataType PRIVATE cppzmq ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(testStageDataType PRIVATE ${cppzmq_INCLUDE_DIR})
+
+target_link_libraries(testLockfreeQueues PRIVATE ${Boost_LIBRARIES})
+target_link_libraries(testStageDataType PRIVATE ${Boost_LIBRARIES})
 include_directories(${Boost_INCLUDE_DIRS})
