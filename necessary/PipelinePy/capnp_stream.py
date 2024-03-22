@@ -88,12 +88,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--port", required=False, type=int, default=5555)
     parser.add_argument(
-        "-d", "--dimensions", required=False, type=int, default=3, choices=[1, 2, 3]
+        "-d", "--dimensions", required=False, type=int, default=2, choices=[1, 2, 3]
     )
-    parser.add_argument("-r", "--rows", required=False, type=int, default=1000)
-    parser.add_argument("-c", "--cols", required=False, type=int, default=1000)
+    parser.add_argument("-r", "--rows", required=False, type=int, default=5000)
+    parser.add_argument("-c", "--cols", required=False, type=int, default=5000)
     parser.add_argument("-e", "--depth", required=False, type=int, default=1)
-    parser.add_argument("-s", "--sleep", required=False, type=float, default=0.01)
+    parser.add_argument("-s", "--sleep", required=False, type=float, default=1)
     parser.add_argument(
         "-t",
         "--type",
