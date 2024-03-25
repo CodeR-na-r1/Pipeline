@@ -33,9 +33,12 @@ namespace Pipeline {
 			NDArray::Reader ndarray = message_reader.getRoot<NDArray>();
 
 			// initialization code
-			assert(ndarray.getShape().size() == 2 && "Shape for opencv::Mat not correct");	// compile-time check
+			assert((ndarray.getShape().size() == 2 ||
+				(ndarray.getShape().size() == 3 && ndarray.getDtype() == NDArray::DType::UINT8)) &&
+				"Shape for opencv::Mat not correct");	// compile-time check
 
-			if (ndarray.getShape().size() != 2)	// runtime check for release mode
+			if (!(ndarray.getShape().size() == 2 ||
+				(ndarray.getShape().size() == 3 && ndarray.getDtype() == NDArray::DType::UINT8)))	// runtime check for release mode
 				throw std::runtime_error{ "Shape for opencv::Mat not correct" };
 
 			shape.width = ndarray.getShape()[0];
@@ -53,7 +56,7 @@ namespace Pipeline {
 			switch (dType) {
 
 			case NDArray::DType::UINT8:
-				return CV_8U;
+				return CV_8UC3;
 
 			case NDArray::DType::UINT16:
 				return CV_16U;

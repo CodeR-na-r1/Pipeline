@@ -16,7 +16,7 @@ class Dimensions(Enum):
     D3 = 3
 
 
-array_schema = capnp.load("ndarray.capnp")
+array_schema = capnp.load("../../scheme/ndarray.capnp")
 
 
 def array_to_capnp(arr):
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--rows", required=False, type=int, default=5000)
     parser.add_argument("-c", "--cols", required=False, type=int, default=5000)
     parser.add_argument("-e", "--depth", required=False, type=int, default=1)
-    parser.add_argument("-s", "--sleep", required=False, type=float, default=1)
+    parser.add_argument("-s", "--sleep", required=False, type=float, default=0)
     parser.add_argument(
         "-t",
         "--type",

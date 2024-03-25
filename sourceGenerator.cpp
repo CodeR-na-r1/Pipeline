@@ -40,14 +40,16 @@ using Pipeline::detail::Measurements;
 
 using json = nlohmann::json;
 
-using DataT = double;
-using TensorT = xt::xarray<DataT>;
+using DataT = std::uint8_t;
+//using TensorT = xt::xarray<DataT>;
+using TensorT = cv::Mat;
 using ShapeT = xt::svector<size_t>;
 
-using StageDataT = std::shared_ptr<TensorT>;
+//using StageDataT = std::shared_ptr<TensorT>;
+using StageDataT = TensorT;
 
 using MPMCQueue = cds::container::VyukovMPMCCycleQueue<
-    std::shared_ptr<TensorT>, typename cds::container::vyukov_queue::make_traits<
+    StageDataT, typename cds::container::vyukov_queue::make_traits<
         cds::opt::buffer<
             cds::opt::v::initialized_static_buffer<void*, 1024>>,
         cds::opt::item_counter< cds::atomicity::item_counter>
@@ -104,7 +106,7 @@ int main() {
         boost::thread_group networkThreadpool;
         networkThreadpool.create_thread([rawDataQ]()
             {   
-                Pipeline::ZmqReceiveManager<ZmqNetworkManagerTraits> zmqManager{ "127.0.0.1", 5555, rawDataQ };
+                Pipeline::ZmqReceiveManager<ZmqNetworkManagerTraits> zmqManager{ "127.0.0.1", 5558, rawDataQ };
 
                 zmqManager.connect();
 
@@ -198,7 +200,7 @@ int main() {
 
                         auto startTimer = chrono::high_resolution_clock::now();
 
-                        std::shared_ptr<TensorT> argData;
+                        StageDataT argData;
                         if (inputQueue->pop(argData)) { // else queue is empty (another thread may have received the value earlier)
 
                             auto&& res = executor(argData);
