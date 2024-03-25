@@ -84,71 +84,47 @@ Pipeline::Stage<StageDataT> getStages() {
         return source;
 }
 
+struct ZmqNetworkManagerTraits {
+
+    using DataT = ::DataT;
+    using QueueT = queueT;
+    using TensorT = ::TensorT;
+    using DeserializerT = Pipeline::NDArrayDeserializator<TensorT>;
+};
+
 int main() {
 
     {
-        // InputNetworkManager {begin}
-        // 
-        // prepare getting data from network via zmq
-
-        const char* ip = "127.0.0.1";
-        const int port = 5555;
-
-        zmq::context_t ctx;
-
         std::shared_ptr<queueT> rawDataQ{ new queueT };  // buffer
 
         boost::thread_group networkThreadpool;
-        networkThreadpool.create_thread([&ctx, rawDataQ]()
-            {
-                std::cout << "threadstart" << std::endl;
-                zmq::socket_t dataReceiver(ctx, zmq::socket_type::sub);
-                dataReceiver.connect("tcp://127.0.0.1:5555");
-                dataReceiver.set(zmq::sockopt::subscribe, "");
+        networkThreadpool.create_thread([rawDataQ]()
+            {   
+                Pipeline::ZmqReceiveManager<ZmqNetworkManagerTraits> zmqManager{ "127.0.0.1", 5555, rawDataQ };
 
-                Pipeline::NDArrayDeserializator<TensorT> deserializator;
-                std::shared_ptr<zmq::message_t> msg{};
+                zmqManager.connect();
 
                 while (true) {
-
-                    msg.reset(new zmq::message_t);
-                    
+                
                     boost::this_thread::interruption_point();
 
-                    zmq::recv_result_t result = dataReceiver.recv(*msg, zmq::recv_flags::dontwait);  // change flag after debugging
-
-                    if (!result)  // instead of assert below
-                    {
-                        std::this_thread::sleep_for(10ms);    // delete after debugging (and change flag)
-                        continue;
-                    }
-                    
                     auto startTimer = chrono::high_resolution_clock::now();
 
-                    auto tensor = deserializator(msg);
+                    if (zmqManager.handleMessage()) {
 
-                    auto prepareTensorTimer = chrono::high_resolution_clock::now();
+                        auto finishTimer = chrono::high_resolution_clock::now();
 
-                    while (!rawDataQ->push(tensor)) {}
-
-                    auto finishTimer = chrono::high_resolution_clock::now();
-
-                    std::cout << "Time measures:\n"
-                        << "\tTensor init time -> " << std::chrono::duration<double, milli>(prepareTensorTimer - startTimer).count() << "ms\n"
-                        << "\tTotal time spent -> " << std::chrono::duration<double, milli>(finishTimer - startTimer).count() << "ms" << std::endl;
+                        std::cout << "Time measures:\n"
+                            << "\tTime for receive packet spent -> " << std::chrono::duration<double, milli>(finishTimer - startTimer).count() << "ms" << std::endl;
+                    }
                 }
             }
         );
 
-        std::cout << "size queue -> " << rawDataQ->size() << std::endl;
-
         std::cout << "Wait while input queue will filled" << std::endl;
         std::this_thread::sleep_for(6000ms); // work emulation
-
         std::cout << "size queue -> " << rawDataQ->size() << std::endl;
 
-        // InputNetworkManager {end}
-        // 
         // Pipeline -> 'ProcessingManager' {begin}
 
         // Creating queue for each stage
