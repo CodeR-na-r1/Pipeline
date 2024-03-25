@@ -16,14 +16,6 @@ namespace Pipeline {
         virtual bool handleMessage() = 0;
     };
 
-    // concept add
-    // check the presence of fields in a type
-    /*
-        DataT = void;
-        TensorT = void;
-        QueueT = void;
-        DeserializerT = void;
-    */
     template <typename Traits>
         requires requires (Traits traits) {
 

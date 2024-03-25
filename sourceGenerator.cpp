@@ -28,11 +28,15 @@
 
 #include "cds/container/vyukov_mpmc_cycle_queue.h"
 
+#include "detail/monitoring/Measurements.hpp"
+
 #include "ProtoManager/DeserializationManager.hpp"
 #include "NetworkManager/NetworkReceiverManager.hpp"
 
 using namespace std;
 using namespace chrono_literals;
+
+using Pipeline::detail::Measurements;
 
 using json = nlohmann::json;
 
@@ -127,7 +131,6 @@ int main() {
 
         // Pipeline -> 'ProcessingManager' {begin}
 
-        // Creating queue for each stage
         Pipeline::Stage<StageDataT> stages = getStages();
         std::cout << stages << std::endl;
         std::cout << "ID -> " << stages.childs[1].id << std::endl;
@@ -137,51 +140,6 @@ int main() {
         std::unordered_map<size_t, Pipeline::Stage<StageDataT>> stagesMap; // id ->  stage by id
         std::unordered_map<size_t, std::shared_ptr<queueT>> inputQueueMap; // get parent queue for current stage by id (i.e. get input queue)
         std::unordered_map<size_t, std::vector<std::shared_ptr<queueT>>> outputQueueMap; // get vector of child queues for current stage by id (i.e. get output queues)
-
-        struct Measurements {
-        
-            uint64_t counter;
-            double accumulator;
-            std::mutex guard;
-
-            /* blocking method 
-            * push time and increment counter
-            */
-            void push(double value) {
-
-                guard.lock();
-
-                accumulator += value;
-                ++counter;
-
-                guard.unlock();
-            }
-
-            /* blocking method 
-            * reset accumulator and counter
-            * return average time
-            */
-            double pull() {
-
-                if (counter == 0)
-                    return 0.0;
-
-                guard.lock();
-
-                auto acc = accumulator;
-                accumulator = 0.0;
-
-                auto count = counter;
-                counter = 0;
-
-                guard.unlock();
-
-                if (count != 0)
-                    return acc / count;
-                else
-                    return 0.0;
-            }
-        };
         
         std::unordered_map<size_t, std::shared_ptr<Measurements>> threadMeasurementsMap;    // shared_ptr because mutex is not copyable
 
