@@ -3,10 +3,14 @@ This project contains benchmarks for testing data structures and algorithms take
 
 The goal is to determine the most effective and convenient of them, and then use them in the project to develop a pipeline for processing multidimensional data
 
-## The project is built using CMake
+## The project is build using CMake
 ```
+# /* clone the repository, cd to directory */
+
+mkdir build
 cd build
 cmake ..
+sudo make -j4 install   # or use another generator
 ```
 
 ## Dependencies
@@ -21,4 +25,4 @@ The project requires the following libraries to build and run it:
 ## License
 The project is licensed under the MIT License
 
-Copyright © 2024 Vlad Sizykh
+Copyright © 2024 MRX
