@@ -41,8 +41,8 @@ namespace Pipeline {
 				(ndarray.getShape().size() == 3 && ndarray.getDtype() == NDArray::DType::UINT8)))	// runtime check for release mode
 				throw std::runtime_error{ "Shape for opencv::Mat not correct" };
 
-			shape.width = ndarray.getShape()[0];
-			shape.height = ndarray.getShape()[1];
+			shape.width = ndarray.getShape()[1];
+			shape.height = ndarray.getShape()[0];
 
 			auto dType = getDType(ndarray.getDtype());
 
