@@ -17,12 +17,15 @@ namespace Pipeline {
     };
 
     template <typename Traits>
-        requires requires (Traits traits) {
+        requires requires (Traits traits, typename Traits::DeserializerT deserializator) {
 
         typename Traits::DataT;
         typename Traits::TensorT;
         typename Traits::QueueT;
         typename Traits::DeserializerT;
+
+        deserializator(std::shared_ptr<zmq::message_t>{});
+
     }
     class ZmqReceiveManager :public INetworkReceiveManager {
 
