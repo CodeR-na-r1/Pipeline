@@ -1,4 +1,5 @@
 #include <iostream>
+#include <filesystem>
 
 #include <memory>
 #include <chrono>
@@ -32,6 +33,8 @@
 
 #include "ProtoManager/DeserializationManager.hpp"
 #include "NetworkManager/NetworkReceiverManager.hpp"
+
+#include "opencvChooser.hpp"
 
 using namespace std;
 using namespace chrono_literals;
@@ -68,26 +71,12 @@ Pipeline::Stage<StageDataT> getStages() {
         throw std::runtime_error{ "FILE CONFIG NOT FOUND" };
     }
 
-    Pipeline::Stage<StageDataT> source = Pipeline::JsonParser::fromFile<StageDataT>(fileJsonConfig, [](std::string callableName) -> function<StageDataT(StageDataT)> {
+    auto logo = cv::imread(std::filesystem::path{ "../examples/resources/logo.jpg" }.generic_string());
+    OpencvChooser chooser{ logo };
 
-        if (callableName == "getImage") {
-            return [](StageDataT data) { return data; };
-        }
-        else if (callableName == "rgb2gray") {
-            return [](StageDataT data) { return data; };
-        }
-        else if (callableName == "gaussian") {
-            return [](StageDataT data) { return data; };
-        }
-        else if (callableName == "display") {
-            return [](StageDataT data) { /*std::cout << data[0];*/ return data; };
-        }
+    Pipeline::Stage<StageDataT> source = Pipeline::JsonParser::fromFile<StageDataT>(fileJsonConfig, chooser).value_or(Pipeline::Stage<StageDataT>{ [](StageDataT data) { return data; }, {}, {} });
 
-        return [](StageDataT data) { return data; };
-
-        }).value_or(Pipeline::Stage<StageDataT>{ [](StageDataT data) {return data; }, {}, {} });
-
-        return source;
+    return source;
 }
 
 struct ZmqNetworkManagerTraits {
@@ -128,14 +117,15 @@ int main() {
         );
 
         std::cout << "Wait while input queue will filled" << std::endl;
-        std::this_thread::sleep_for(6000ms); // work emulation
+        (void)std::getchar();
+        //std::this_thread::sleep_for(6000ms); // work emulation
         std::cout << "size queue -> " << rawDataQ->size() << std::endl;
 
         // Pipeline -> 'ProcessingManager' {begin}
 
         Pipeline::Stage<StageDataT> stages = getStages();
         std::cout << stages << std::endl;
-        std::cout << "ID -> " << stages.childs[1].id << std::endl;
+        std::cout << "ID -> " << stages.childs[0].id << std::endl;
 
         // create map for stages launch in multi-threading
 
@@ -272,7 +262,8 @@ int main() {
         // Part of all Manager's (stopping threadpool)
 
         std::cout << "Wait end of work" << std::endl;
-        std::this_thread::sleep_for(20000ms);
+        (void)std::getchar();
+        //std::this_thread::sleep_for(20000ms);
 
         monitoringThread.interrupt();
         monitoringThread.join();

@@ -4,8 +4,8 @@ import cv2
 
 import capnp
 
-FILENAME = "video/video1080.webm"
-FREQUECE = 80   # frames per second
+FILENAME = "video/video2160.webm"
+FREQUECE = 10   # frames per second
 port = 5558
 
 sleepTime = 1 / FREQUECE # millisecnods
@@ -62,14 +62,13 @@ while True:
 
         socket.send(array_to_capnp(img))
 
-        # time.sleep(sleepTime)
+        time.sleep(sleepTime)
 
     except KeyboardInterrupt as e:
             
             print("Stop server loop...")
-            socket.close()
-            context.term()
-
             break
     
+socket.close()
+context.term()
 cv2.destroyAllWindows()

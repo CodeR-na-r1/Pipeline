@@ -1,21 +1,25 @@
 {
     "stages" : {
         
-        "start" : "source",
+        "start" : "drawLogo",
         "list" : [
-            {"name" : "source", "callable" : "getImage"},
-            {"name" : "convert", "callable" : "rgb2gray"},
+            {"name" : "drawLogo", "callable" : "drawLogo"},
+            {"name" : "gray", "callable" : "rgb2gray"},
             {"name" : "blur", "callable" : "gaussian"},
-            {"name" : "display", "callable" : "display"}
+            {"name" : "display", "callable" : "display"},
+            {"name" : "circle", "callable" : "circle"},
+            {"name" : "storeOne", "callable" : "store1"},
+            {"name" : "storeTwo", "callable" : "store2"}
         ]
     },
 
     "connections" : {
 
         "list" : [
-            {"from" : "source", "to" : ["convert", "display"]},
-            {"from" : "convert", "to" : ["blur", "display"]},
-            {"from" : "blur", "to" : "display"}
+            {"from" : "drawLogo", "to" : ["gray", "display", "circle"]},
+            {"from" : "gray", "to" : "blur"},
+            {"from" : "blur", "to" : "storeOne"},
+            {"from" : "circle", "to" : "storeTwo"}
         ]
     }
 }
