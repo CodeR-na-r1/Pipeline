@@ -57,7 +57,7 @@ namespace Pipeline {
 				os << child;
 				isFirst = false;
 			}
-			cout << ")";
+			os << ")";
 		}
 
 		friend ostream& operator<<(ostream& os, const Stage s) {
