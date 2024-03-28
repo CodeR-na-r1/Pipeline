@@ -1,13 +1,8 @@
 cmake_minimum_required(VERSION 3.12)
 
-set (PROJECT PipeLine)
+set (PROJECT SetupProject)
 
-set (CMAKE_CXX_STANDARD 20)
-set (CMAKE_CXX_STANDARD_REQUIRED ON)
-
-project(${PROJECT} VERSION 1.0 LANGUAGES CXX)
-
-set (CMAKE_CXX_FLAGS "-std=c++20 -Wall ${CMAKE_CXX_FLAGS}")
+project(${PROJECT} VERSION 1.0)
 
 # dependency search
 FIND_PACKAGE(OpenCV REQUIRED)
@@ -23,26 +18,11 @@ find_package(cppzmq REQUIRED)
 
 find_package(Boost 1.70 REQUIRED COMPONENTS ALL)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all")
+SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all")
+SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib CACHE PATH "Single Directory for all")
 
-add_executable (Source source.cpp)
+enable_testing()
 
-add_executable (Source2 sourceGenerator.cpp)
-
-# target_include_directories(Source2 PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-
-target_link_libraries(Source2 PRIVATE ${OpenCV_LIBS})
-target_include_directories(Source2 PRIVATE ${OpenCV_INCLUDE_DIRS})
-
-target_include_directories(Source2 PRIVATE ${xtensor_INCLUDE_DIRS})
-target_include_directories(Source2 PRIVATE ${xtl_INCLUDE_DIRS})
-
-target_link_libraries(Source2 PRIVATE CapnProto::capnp)
-target_include_directories(Source2 PRIVATE ${CAPNP_INCLUDE_DIRS})
-
-target_link_libraries(Source2 PRIVATE cppzmq ${CMAKE_THREAD_LIBS_INIT})
-target_include_directories(Source2 PRIVATE ${cppzmq_INCLUDE_DIR})
-
-target_link_libraries(Source2 PRIVATE ${Boost_LIBRARIES})
-target_include_directories(Source2 PRIVATE ${Boost_INCLUDE_DIRS})
+add_subdirectory(src)
+add_subdirectory(test)
