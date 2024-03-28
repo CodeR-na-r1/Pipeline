@@ -64,17 +64,19 @@ using queueT = MPMCQueue;
 
 Pipeline::Stage<StageDataT> getStages() {
 
-    ifstream fileJsonConfig("../pipeConfig.json");
+    ifstream fileJsonConfig("../../src/pipeConfig.json");
 
     if (!fileJsonConfig.is_open()) {
         cerr << "File from object ifstream \'fileJsonConfig\' not open!" << std::endl;
         throw std::runtime_error{ "FILE CONFIG NOT FOUND" };
     }
 
-    auto logo = cv::imread(std::filesystem::path{ "../examples/resources/logo.jpg" }.generic_string());
+    auto logo = cv::imread(std::filesystem::path{ "../../examples/resources/logo.jpg" }.generic_string());
     OpencvChooser chooser{ logo };
 
     Pipeline::Stage<StageDataT> source = Pipeline::JsonParser::fromFile<StageDataT>(fileJsonConfig, chooser).value_or(Pipeline::Stage<StageDataT>{ [](StageDataT data) { return data; }, {}, {} });
+
+    fileJsonConfig.close();
 
     return source;
 }

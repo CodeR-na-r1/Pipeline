@@ -60,14 +60,14 @@ struct OpencvChooser {
 
 			return [](cv::Mat data) {
 				static uint64_t counter{};
-				cv::imwrite(std::filesystem::path{ "../storeRes/store1/frame_" + std::to_string(++counter) + ".jpg" }.generic_string(), data);
+				cv::imwrite(std::filesystem::path{ "../../storeRes/store1/frame_" + std::to_string(++counter) + ".jpg" }.generic_string(), data);
 				return data; };
 		}
 		else if (callableName == "store2") {
 
 			return [](cv::Mat data) {
 				static uint64_t counter{};
-				cv::imwrite(std::filesystem::path{ "../storeRes/store2/frame_" + std::to_string(++counter) + ".jpg" }.generic_string(), data);
+				cv::imwrite(std::filesystem::path{ "../../storeRes/store2/frame_" + std::to_string(++counter) + ".jpg" }.generic_string(), data);
 				return data; };
 		}
 		else if (callableName == "coords") {

@@ -15,8 +15,6 @@ BOOST_AUTO_TEST_CASE(TestCreatePipelineByConfigFromFileWithError) {
 
 	std::ifstream fileJsonConfig("../../test/src/pipeline/pipeConfigWithError.json");
 
-	std::cout << std::filesystem::current_path() << std::endl;
-
 	BOOST_CHECK(fileJsonConfig.is_open() && "File from object ifstream \'fileJsonConfig\' not open!");
 
 	auto source = Pipeline::JsonParser::fromFile<int>(fileJsonConfig, [](std::string callableName) -> std::function<int(int)> {
@@ -27,6 +25,8 @@ BOOST_AUTO_TEST_CASE(TestCreatePipelineByConfigFromFileWithError) {
 
 		return [](int data) { return data; };
 	});
+
+	fileJsonConfig.close();
 
 	BOOST_CHECK(source.has_value() == false);
 }
@@ -54,6 +54,8 @@ BOOST_AUTO_TEST_CASE(TestCreatePipelineByConfigFromFile) {
 
 		return [](int data) { return data; };
 		}).value_or(Pipeline::Stage<int>([](int data) {return data; }, {}, {}));
+
+	fileJsonConfig.close();
 
 	std::ostringstream ss{};
 	source.dump(ss);
