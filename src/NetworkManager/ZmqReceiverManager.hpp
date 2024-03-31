@@ -1,20 +1,13 @@
 #pragma once
 
+#include "INetworkReceiverManager.hpp"
+
 #include <string>
 #include <memory>
 
 #include "zmq.hpp"
 
 namespace Pipeline {
-
-    class INetworkReceiveManager {
-
-    public:
-
-        virtual void connect() = 0;
-
-        virtual bool handleMessage() = 0;
-    };
 
     template <typename Traits>
         requires requires (Traits traits, typename Traits::DeserializerT deserializator) {
@@ -27,7 +20,7 @@ namespace Pipeline {
         deserializator(std::shared_ptr<zmq::message_t>{});
 
     }
-    class ZmqReceiveManager :public INetworkReceiveManager {
+    class ZmqReceiverManager :public INetworkReceiverManager {
 
         std::string ip;
         const int port;
@@ -42,9 +35,9 @@ namespace Pipeline {
 
     public:
 
-        ZmqReceiveManager() = delete;
+        ZmqReceiverManager() = delete;
 
-        ZmqReceiveManager(const std::string ip, const int port, std::shared_ptr<typename Traits::QueueT> queue) :ip(ip), port(port), queue(queue) {}
+        ZmqReceiverManager(const std::string ip, const int port, std::shared_ptr<typename Traits::QueueT> queue) :ip(ip), port(port), queue(queue) {}
 
         virtual void connect() override {
 

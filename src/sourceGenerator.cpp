@@ -1,3 +1,5 @@
+// external headers
+
 #include <iostream>
 #include <filesystem>
 
@@ -24,15 +26,21 @@
 
 #include "opencv2/opencv.hpp"
 
-#include "parser/parser.hpp"
-#include "pipeline/stage.hpp"
-
 #include "cds/container/vyukov_mpmc_cycle_queue.h"
+
+// internal headers
+
+#include "pipeline/stage.hpp"
+#include "parser/parser.hpp"
+#include "pipeline/pipeline.hpp"
 
 #include "detail/monitoring/Measurements.hpp"
 
 #include "ProtoManager/DeserializationManager.hpp"
-#include "NetworkManager/NetworkReceiverManager.hpp"
+#include "NetworkManager/InetworkReceiverManager.hpp"
+#include "NetworkManager/ZmqReceiverManager.hpp"
+
+// 'user' headers
 
 #include "opencvChooser.hpp"
 
@@ -97,7 +105,7 @@ int main() {
         boost::thread_group networkThreadpool;
         networkThreadpool.create_thread([rawDataQ]()
             {   
-                Pipeline::ZmqReceiveManager<ZmqNetworkManagerTraits> zmqManager{ "127.0.0.1", 5558, rawDataQ };
+                Pipeline::ZmqReceiverManager<ZmqNetworkManagerTraits> zmqManager{ "127.0.0.1", 5558, rawDataQ };
 
                 zmqManager.connect();
 
