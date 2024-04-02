@@ -22,7 +22,7 @@
 #include "IInitializator.hpp"
 #include "opencvInitializator.hpp"
 #include "xtensorInitializator.hpp"
-#include "utensorInitializator.hpp"
+//#include "utensorInitializator.hpp"
 
 using namespace std::chrono_literals;
 
@@ -35,7 +35,7 @@ int main() {
     {
         std::vector<std::unique_ptr<Benchmark::Initializator::IInitializer<DataT>>> initializers{};
 
-        initializers.emplace_back(new Benchmark::Initializator::UtensorInitializer<DataT>);
+        //initializers.emplace_back(new Benchmark::Initializator::UtensorInitializer<DataT>);
         initializers.emplace_back(new Benchmark::Initializator::XtensorInitializer<DataT>);
         initializers.emplace_back(new Benchmark::Initializator::OpencvInitializer<DataT>);
         
