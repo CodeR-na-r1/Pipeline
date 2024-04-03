@@ -25,4 +25,5 @@ SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib CACHE PATH "Single
 enable_testing()
 
 add_subdirectory(src)
+add_subdirectory(benchmark)
 add_subdirectory(test)
