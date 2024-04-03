@@ -30,9 +30,19 @@
 
 // internal headers
 
+#include "pipeline/frame/IFrame.hpp"
+#include "pipeline/frame/Frame.hpp"
+#include "pipeline/frame/IIDFrame.hpp"
+#include "pipeline/frame/IDFrame.hpp"
+
 #include "pipeline/stage.hpp"
 #include "parser/parser.hpp"
 #include "pipeline/pipeline.hpp"
+
+#include "connector/IConnector.hpp"
+#include "connector/SPSCConnector.hpp"
+#include "connector/MPMCConnector.hpp"
+#include "connector/SyncMPMCConnector.hpp"
 
 #include "detail/monitoring/Measurements.hpp"
 
