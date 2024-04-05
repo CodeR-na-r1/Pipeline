@@ -1,21 +1,25 @@
 #pragma once
 
+#include "IMeasurements.hpp"
+
 #include <mutex>
 
 namespace Pipeline {
 
-	namespace detail {
+    namespace detail {
 
-        struct Measurements {
+        struct Measurements : public IMeasurements {
 
             std::uint64_t counter;
             double accumulator;
             std::mutex guard;
 
+            Measurements() : IMeasurements() {}
+
             /* blocking method
             * push time and increment counter
             */
-            void push(double value) {
+            virtual void push(double value) override {
 
                 guard.lock();
 
@@ -29,7 +33,7 @@ namespace Pipeline {
             * reset accumulator and counter
             * return average time
             */
-            double pull() {
+            virtual double pull() override {
 
                 if (counter == 0)
                     return 0.0;
@@ -50,6 +54,6 @@ namespace Pipeline {
                     return 0.0;
             }
         };
-	}
+    }
 
 }
