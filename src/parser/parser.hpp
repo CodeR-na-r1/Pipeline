@@ -1,6 +1,7 @@
 #pragma once
 
-#include "pipeline/stage.hpp"
+#include "../pipeline/stage.hpp"
+
 #include "json/json.hpp"
 
 #include <iostream>
@@ -15,71 +16,71 @@
 
 namespace Pipeline {
 
-	using nlohmann::json;
-			
-	struct JsonParser {
+	namespace Parser {
 
-		//static auto findChilds = []() {};
+		using nlohmann::json;
 
-		template <typename TData>
-		static std::optional<Stage<TData>> fromFile(std::ifstream& f, std::function<std::function<TData(TData)>(std::string)> chooser) {
-		
-			json data = json::parse(f);
+		struct JsonParser {
 
-			json stagesInfo = data["stages"];
-			json stages = stagesInfo["list"];
+			template <typename TData>
+			static std::optional<Stage::Stage<TData>> fromFile(std::ifstream& f, std::function<std::function<TData(TData)>(std::string)> chooser) {
 
-			json connections = data["connections"]["list"];
+				json data = json::parse(f);
 
-			std::string startName = stagesInfo["start"];
-			auto startCallable = std::find_if(stages.begin(), stages.end(), [&startName](auto a) { return a["name"] == startName; });
-			if (startCallable == stages.end()) {
-				return std::nullopt;
-			}
+				json stagesInfo = data["stages"];
+				json stages = stagesInfo["list"];
 
-			Stage res{ chooser((*startCallable)["callable"]), startName, {} };
+				json connections = data["connections"]["list"];
 
-			std::queue<Stage<TData>*> queue;
-			queue.push(&res);
+				std::string startName = stagesInfo["start"];
+				auto startCallable = std::find_if(stages.begin(), stages.end(), [&startName](auto a) { return a["name"] == startName; });
+				if (startCallable == stages.end()) {
+					return std::nullopt;
+				}
 
-			while (!queue.empty()) {
+				Stage::Stage res{ chooser((*startCallable)["callable"]), startName, {} };
 
-				auto current = queue.front();
+				std::queue<Stage<TData>*> queue;
+				queue.push(&res);
 
-				auto temp = std::find_if(connections.begin(), connections.end(), [name = current->name](auto a) { return a["from"] == name; });
-				if (temp != connections.end()) {
+				while (!queue.empty()) {
 
-					json value = (*temp)["to"];
-					if (value.is_array()) {
-						for (auto&& child : value) {
-							auto callableNameIt = std::find_if(stages.begin(), stages.end(), [child](auto a) { return a["name"] == child; });
+					auto current = queue.front();
+
+					auto temp = std::find_if(connections.begin(), connections.end(), [name = current->name](auto a) { return a["from"] == name; });
+					if (temp != connections.end()) {
+
+						json value = (*temp)["to"];
+						if (value.is_array()) {
+							for (auto&& child : value) {
+								auto callableNameIt = std::find_if(stages.begin(), stages.end(), [child](auto a) { return a["name"] == child; });
+								if (callableNameIt == stages.end()) {
+									return std::nullopt;
+								}
+								current->childs.push_back({ chooser((*callableNameIt)["callable"]), child, {} });
+							}
+							for (auto&& child : current->childs) {
+								queue.push(&child);
+							}
+						}
+						else if (value.is_string()) {
+							auto callableNameIt = std::find_if(stages.begin(), stages.end(), [value](auto a) { return a["name"] == value; });
 							if (callableNameIt == stages.end()) {
 								return std::nullopt;
 							}
-							current->childs.push_back({ chooser((*callableNameIt)["callable"]), child, {} });
+							current->childs.push_back({ chooser((*callableNameIt)["callable"]), value, {} });
+							queue.push(&(current->childs[0]));
 						}
-						for (auto&& child : current->childs) {
-							queue.push(&child);
-						}
-					}
-					else if (value.is_string()) {
-						auto callableNameIt = std::find_if(stages.begin(), stages.end(), [value](auto a) { return a["name"] == value; });
-						if (callableNameIt == stages.end()) {
+						else {
 							return std::nullopt;
 						}
-						current->childs.push_back({ chooser((*callableNameIt)["callable"]), value, {} });
-						queue.push(&(current->childs[0]));
 					}
-					else {
-						return std::nullopt;
-					}
+
+					queue.pop();
 				}
 
-				queue.pop();
+				return res;
 			}
-
-			return res;
-		}
-	};
-
+		};
+	}
 }
