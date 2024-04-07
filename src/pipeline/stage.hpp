@@ -9,66 +9,94 @@
 
 namespace Pipeline {
 
-	using namespace std;
+	namespace Stage {
 
-	template <typename TData>
-	struct Stage {
+		template <typename TData>
+		struct Stage {
 
-	private:
+		private:
 
-		static std::size_t idTotalCounter;
+			static std::size_t idTotalCounter;
 
-	public:
+			std::size_t id;
+			std::function<TData(TData)> callable;
+			std::string name;
+			std::vector<Stage<TData>> childs;
 
-		std::size_t id;
-		function<TData(TData)> callable;
-		string name;
-		vector<Stage> childs;
+		public:
 
-		Stage(function<TData(TData)> callable, string name, vector<Stage> childs) : id(idTotalCounter++), callable(callable), name(name), childs(childs) {}
+			Stage(std::function<TData(TData)> callable, std::string name, std::vector<Stage<TData>> childs) : id(idTotalCounter++), callable(callable), name(name), childs(childs) {}
 
-		Stage(const Stage& other) = default;
+			Stage(const Stage& other) : id(idTotalCounter++), callable(other.callable), name(other.name), childs(other.childs) {}
 
-		void operator()(TData data) {
+			Stage(Stage&&) = default;
 
-			auto result = callable(data);
+			void operator()(TData data) {
 
-			for (auto&& child : childs) {
+				auto result = callable(data);
 
-				child(result);
+				for (auto&& child : childs) {
+
+					child(result);
+				}
 			}
-		}
 
-		void addChild(const Stage child) {
-
-			childs.push_back(child);
-		}
-
-		void dump(ostream& os) const {
-
-			os << name << "(";
-
-			bool isFirst = true;	// for beautiful output
-
-			for (auto&& child : childs) {
-
-				if (!isFirst)
-					os << ", ";
-				os << child;
-				isFirst = false;
+			const std::size_t getId() const {
+				return id;
 			}
-			os << ")";
-		}
 
-		friend ostream& operator<<(ostream& os, const Stage s) {
+			const std::string getName() const {
+				return name;
+			}
 
-			s.dump(os);
+			const std::function<TData(TData)> getCallable() const {
+				return callable;
+			}
 
-			return os;
-		}
+			const std::vector<Stage<TData>>& getChilds() const {
+				return childs;
+			}
 
-	};
+			std::vector<Stage<TData>>& getChilds() {
+				return childs;
+			}
 
-	template<typename TData>
-	std::size_t Stage<TData>::idTotalCounter = 0;
+			void addChild(const Stage<TData>& child) {
+
+				childs.push_back(child);
+			}
+
+			void addChild(Stage<TData>&& child) {
+
+				childs.push_back(std::move(child));
+			}
+
+			void dump(std::ostream& os) const {
+
+				os << name << "(";
+
+				bool isFirst = true;	// for beautiful output
+
+				for (auto&& child : childs) {
+
+					if (!isFirst)
+						os << ", ";
+					os << child;
+					isFirst = false;
+				}
+				os << ")";
+			}
+
+			friend std::ostream& operator<<(std::ostream& os, const Stage s) {
+
+				s.dump(os);
+
+				return os;
+			}
+
+		};
+
+		template<typename TData>
+		std::size_t Stage<TData>::idTotalCounter = 0;
+	}
 }
