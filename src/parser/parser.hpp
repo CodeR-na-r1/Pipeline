@@ -1,11 +1,13 @@
 #pragma once
 
-#include "../pipeline/stage.hpp"
-
 #include "json/json.hpp"
+
+#include "../pipeline/Stage.hpp"
+#include "../detail/chooser/IChooser.hpp"
 
 #include <iostream>
 #include <fstream>
+#include <memory>
 
 #include <string>
 #include <vector>
@@ -23,7 +25,9 @@ namespace Pipeline {
 		struct JsonParser {
 
 			template <typename TData>
-			static std::optional<Stage::Stage<TData>> fromFile(std::ifstream& f, std::function<std::function<TData(TData)>(std::string)> chooser) {
+			static std::optional<Stage::Stage<TData>> fromFile(std::ifstream& f, std::shared_ptr<detail::IChooser<TData>> chooser) {
+
+				std::function<TData(TData)> tempCallable;
 
 				json data = json::parse(f);
 
@@ -35,19 +39,22 @@ namespace Pipeline {
 				std::string startName = stagesInfo["start"];
 				auto startCallable = std::find_if(stages.begin(), stages.end(), [&startName](auto a) { return a["name"] == startName; });
 				if (startCallable == stages.end()) {
-					return std::nullopt;
+					return {};
 				}
 
-				Stage::Stage res{ chooser((*startCallable)["callable"]), startName, {} };
+				if (!chooser->operator()((*startCallable)["callable"], tempCallable))
+					return {};
 
-				std::queue<Stage<TData>*> queue;
+				Stage::Stage<TData> res{ std::move(tempCallable), startName, {} };
+
+				std::queue<Stage::Stage<TData>*> queue;
 				queue.push(&res);
 
 				while (!queue.empty()) {
 
 					auto current = queue.front();
 
-					auto temp = std::find_if(connections.begin(), connections.end(), [name = current->name](auto a) { return a["from"] == name; });
+					auto temp = std::find_if(connections.begin(), connections.end(), [name = current->getName()](auto a) { return a["from"] == name; });
 					if (temp != connections.end()) {
 
 						json value = (*temp)["to"];
@@ -55,24 +62,28 @@ namespace Pipeline {
 							for (auto&& child : value) {
 								auto callableNameIt = std::find_if(stages.begin(), stages.end(), [child](auto a) { return a["name"] == child; });
 								if (callableNameIt == stages.end()) {
-									return std::nullopt;
+									return {};
 								}
-								current->childs.push_back({ chooser((*callableNameIt)["callable"]), child, {} });
+								if (!chooser->operator()((*callableNameIt)["callable"], tempCallable))
+									return {};
+								current->addChild(std::move(Stage::Stage<TData>{ std::move(tempCallable), child, {} }));
 							}
-							for (auto&& child : current->childs) {
+							for (auto&& child : current->getChilds()) {
 								queue.push(&child);
 							}
 						}
 						else if (value.is_string()) {
 							auto callableNameIt = std::find_if(stages.begin(), stages.end(), [value](auto a) { return a["name"] == value; });
 							if (callableNameIt == stages.end()) {
-								return std::nullopt;
+								return {};
 							}
-							current->childs.push_back({ chooser((*callableNameIt)["callable"]), value, {} });
-							queue.push(&(current->childs[0]));
+							if (!chooser->operator()((*callableNameIt)["callable"], tempCallable))
+								return {};
+							current->addChild(std::move(Stage::Stage<TData>{ std::move(tempCallable), value, {} }));
+							queue.push(&(current->getChilds()[0]));
 						}
 						else {
-							return std::nullopt;
+							return {};
 						}
 					}
 
