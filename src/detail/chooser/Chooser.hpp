@@ -18,6 +18,8 @@ namespace Pipeline {
 
 			Chooser() : IChooser<DataT>() {}
 
+			Chooser(Chooser&&) = default;
+
 			virtual bool operator()(const std::string& callableName, std::function<DataT(DataT)>& callable) override {
 
 				for (auto&& chooser : choosers) {
