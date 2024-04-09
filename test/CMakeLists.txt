@@ -16,23 +16,19 @@ include_directories(${CMAKE_SOURCE_DIR}/src)
 
 include_directories(${Boost_INCLUDE_DIRS})
 
-add_executable (stageTest src/pipeline/stageTest.cpp)
+add_executable (stageTest src/pipeline/stageTest.cpp)   # stage test
 target_link_libraries(stageTest PRIVATE ${Boost_LIBRARIES})
 
-add_executable (parserTest src/parser/parserTest.cpp)
+add_executable (parserTest src/parser/parserTest.cpp)   # parser test
 target_link_libraries(parserTest PRIVATE ${Boost_LIBRARIES})
+
+add_executable (frameTest src/pipeline/frame/frameTest.cpp)   # frame (DAO) test
+target_link_libraries(frameTest PRIVATE ${Boost_LIBRARIES})
+
+add_executable (connectorTest src/connector/connectorTest.cpp)   # connector test
+target_link_libraries(connectorTest PRIVATE ${Boost_LIBRARIES})
 
 add_test(NAME StageTest COMMAND stageTest)
 add_test(NAME ParserTest COMMAND parserTest)
-
-# target_link_libraries(Source2 PRIVATE ${OpenCV_LIBS})
-# target_include_directories(Source2 PRIVATE ${OpenCV_INCLUDE_DIRS})
-
-# target_include_directories(Source2 PRIVATE ${xtensor_INCLUDE_DIRS})
-# target_include_directories(Source2 PRIVATE ${xtl_INCLUDE_DIRS})
-
-# target_link_libraries(Source2 PRIVATE CapnProto::capnp)
-# target_include_directories(Source2 PRIVATE ${CAPNP_INCLUDE_DIRS})
-
-# target_link_libraries(Source2 PRIVATE cppzmq ${CMAKE_THREAD_LIBS_INIT})
-# target_include_directories(Source2 PRIVATE ${cppzmq_INCLUDE_DIR})
+add_test(NAME FrameTest COMMAND frameTest)
+add_test(NAME ConnectorTest COMMAND connectorTest)
