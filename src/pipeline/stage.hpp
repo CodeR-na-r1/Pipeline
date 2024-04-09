@@ -25,13 +25,15 @@ namespace Pipeline {
 
 		public:
 
-			Stage() = delete;
+			Stage() = default;
 
 			Stage(std::function<TData(TData)> callable, std::string name, std::vector<Stage<TData>> childs) : id(idTotalCounter++), callable(callable), name(name), childs(childs) {}
 
 			Stage(const Stage& other) : id(idTotalCounter++), callable(other.callable), name(other.name), childs(other.childs) {}
 
 			Stage(Stage&&) = default;
+
+			Stage& operator=(Stage&& other) = default;
 
 			void operator()(TData data) {
 

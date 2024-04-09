@@ -9,9 +9,11 @@ namespace Pipeline {
 		template <typename DataT>
 		class Frame : public IFrame<DataT> {
 
-			DataT data;
+			DataT data{};
 
 		public:
+
+			Frame() = default;
 
 			Frame(const DataT& data) : IFrame<DataT>(), data(data) {}
 
