@@ -1,5 +1,7 @@
 #pragma once
 
+#include "IDeserializationManager.hpp"
+
 #include <memory> // shared_ptr
 
 #include "zmq.hpp"	// message_t
@@ -14,112 +16,119 @@
 
 namespace Pipeline {
 
-	template<typename T> class NDArrayDeserializator {};	// primary template
+	namespace Proto {
 
-	template<> class NDArrayDeserializator<cv::Mat> {	// spec for cv::Mat
+		template<typename DataT> class NDArrayDeserializator {};	// primary template
 
-		cv::Size shape;
+		template<> class NDArrayDeserializator<cv::Mat> : public IDeserializationManager<std::shared_ptr<zmq::message_t>, cv::Mat> {	// spec for cv::Mat
 
-	public:
+			cv::Size shape;
 
-		[[nodiscard]]
-		cv::Mat operator()(std::shared_ptr<zmq::message_t> msg) {
+		public:
 
-			// create a pointer to aligned data from the received message
-			auto alignedPtr = kj::ArrayPtr<const capnp::word>((capnp::word*)msg->data(), msg->size() / sizeof(capnp::word));
+			[[nodiscard]]
+			virtual cv::Mat operator()(std::shared_ptr<zmq::message_t> msg) override {
 
-			// create an input stream from the memory buffer
-			capnp::FlatArrayMessageReader message_reader(alignedPtr, capnp::ReaderOptions{ 9999999999999ui64, 512 });
-			NDArray::Reader ndarray = message_reader.getRoot<NDArray>();
+				// create a pointer to aligned data from the received message
+				auto alignedPtr = kj::ArrayPtr<const capnp::word>((capnp::word*)msg->data(), msg->size() / sizeof(capnp::word));
 
-			// initialization code
-			assert((ndarray.getShape().size() == 2 ||
-				(ndarray.getShape().size() == 3 && ndarray.getDtype() == NDArray::DType::UINT8)) &&
-				"Shape for opencv::Mat not correct");	// compile-time check
+				// create an input stream from the memory buffer
+				capnp::FlatArrayMessageReader message_reader(alignedPtr, capnp::ReaderOptions{ 9999999999999ui64, 512 });
+				NDArray::Reader ndarray = message_reader.getRoot<NDArray>();
 
-			if (!(ndarray.getShape().size() == 2 ||
-				(ndarray.getShape().size() == 3 && ndarray.getDtype() == NDArray::DType::UINT8)))	// runtime check for release mode
-				throw std::runtime_error{ "Shape for opencv::Mat not correct" };
+				// initialization code
+				assert((ndarray.getShape().size() == 2 ||
+					(ndarray.getShape().size() == 3 && ndarray.getDtype() == NDArray::DType::UINT8)) &&
+					"Shape for opencv::Mat not correct");	// compile-time check
 
-			shape.width = ndarray.getShape()[1];
-			shape.height = ndarray.getShape()[0];
+				if (!(ndarray.getShape().size() == 2 ||
+					(ndarray.getShape().size() == 3 && ndarray.getDtype() == NDArray::DType::UINT8)))	// runtime check for release mode
+					throw std::runtime_error{ "Shape for opencv::Mat not correct" };
 
-			auto dType = getDType(ndarray.getDtype());
+				shape.width = ndarray.getShape()[1];
+				shape.height = ndarray.getShape()[0];
 
-			auto data = cv::Mat(shape, dType, (void*)(&ndarray.getData().asBytes()[0])).clone();	// clone for deep copy
+				auto dType = getDType(ndarray.getDtype());
 
-			return data;
-		}
+				auto data = cv::Mat(shape, dType, (void*)(&ndarray.getData().asBytes()[0])).clone();	// clone for deep copy
 
-		auto getDType(const NDArray::DType& dType) {
-
-			switch (dType) {
-
-			case NDArray::DType::UINT8:
-				return CV_8UC3;
-
-			case NDArray::DType::UINT16:
-				return CV_16U;
-
-			case NDArray::DType::UINT32:
-				return CV_32S;
-
-			case NDArray::DType::INT8:
-				return CV_8S;
-
-			case NDArray::DType::INT16:
-				return CV_16S;
-
-			case NDArray::DType::INT32:
-				return CV_32S;
-
-			case NDArray::DType::FLOAT32:
-				return CV_32F;
-
-			case NDArray::DType::FLOAT64:
-				return CV_64F;
+				return data;
 			}
 
-			throw std::runtime_error{ "Match not found for dType" };
-		}
-	};
+			auto getDType(const NDArray::DType& dType) {
 
-	template <typename DataT>
-	class NDArrayDeserializator<xt::xarray<DataT>> {	// spec for xt::xarray
+				switch (dType) {
 
-		using TensorT = xt::xarray<DataT>;
+				case NDArray::DType::UINT8:
+					return CV_8UC3;
 
-		xt::svector<size_t> shape;
+				case NDArray::DType::UINT16:
+					return CV_16U;
 
-	public:
+				case NDArray::DType::UINT32:
+					return CV_32S;
 
-		NDArrayDeserializator() {
+				case NDArray::DType::INT8:
+					return CV_8S;
 
-			shape.reserve(3);
-		}
+				case NDArray::DType::INT16:
+					return CV_16S;
 
-		[[nodiscard]]
-		std::shared_ptr<TensorT> operator()(std::shared_ptr<zmq::message_t> msg) {
+				case NDArray::DType::INT32:
+					return CV_32S;
 
-			// create a pointer to aligned data from the received message
-			auto alignedPtr = kj::ArrayPtr<const capnp::word>((capnp::word*)msg->data(), msg->size() / sizeof(capnp::word));
+				case NDArray::DType::FLOAT32:
+					return CV_32F;
 
-			// create an input stream from the memory buffer
-			capnp::FlatArrayMessageReader message_reader(alignedPtr, capnp::ReaderOptions{ 9999999999999ui64, 512 });
-			NDArray::Reader ndarray = message_reader.getRoot<NDArray>();
+				case NDArray::DType::FLOAT64:
+					return CV_64F;
+				}
 
-			// shape
-			for (auto&& dimm : ndarray.getShape()) {
-				shape.push_back(static_cast<std::size_t>(dimm));
+				throw std::runtime_error{ "Match not found for dType" };
 			}
 
-			// data
-			auto tensorAdapter = xt::adapt_smart_ptr((DataT*)(&ndarray.getData().asBytes()[0]), shape, msg);
-			std::shared_ptr<TensorT> tensor{ new TensorT { tensorAdapter} };
-			shape.clear();
+			std::unique_ptr<IDeserializationManager> build() {
 
-			return tensor;
-		}
+				return std::unique_ptr<IDeserializationManager>{ new NDArrayDeserializator<cv::Mat>{ std::move(*this) } };
+			}
+		};
 
-	};
+		template <typename DataT>
+		class NDArrayDeserializator<xt::xarray<DataT>> : public IDeserializationManager<std::shared_ptr<zmq::message_t>, std::shared_ptr<xt::xarray<DataT>>> {	// spec for xt::xarray
+
+			using TensorT = xt::xarray<DataT>;
+
+			xt::svector<size_t> shape;
+
+		public:
+
+			NDArrayDeserializator() {
+
+				shape.reserve(3);
+			}
+
+			[[nodiscard]]
+			virtual std::shared_ptr<TensorT> operator()(std::shared_ptr<zmq::message_t> msg) override {
+
+				// create a pointer to aligned data from the received message
+				auto alignedPtr = kj::ArrayPtr<const capnp::word>((capnp::word*)msg->data(), msg->size() / sizeof(capnp::word));
+
+				// create an input stream from the memory buffer
+				capnp::FlatArrayMessageReader message_reader(alignedPtr, capnp::ReaderOptions{ 9999999999999ui64, 512 });
+				NDArray::Reader ndarray = message_reader.getRoot<NDArray>();
+
+				// shape
+				for (auto&& dimm : ndarray.getShape()) {
+					shape.push_back(static_cast<std::size_t>(dimm));
+				}
+
+				// data
+				auto tensorAdapter = xt::adapt_smart_ptr((DataT*)(&ndarray.getData().asBytes()[0]), shape, msg);
+				std::shared_ptr<TensorT> tensor{ new TensorT { tensorAdapter} };
+				shape.clear();
+
+				return tensor;
+			}
+		};
+	}
 }
