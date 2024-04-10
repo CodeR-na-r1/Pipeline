@@ -11,12 +11,12 @@
         
         "start" : "drawLogo",
         "list" : [
-            {"name" : "drawLogo", "callable" : "drawLogo"},
+            {"name" : "drawLogo", "callable" : "drawLogo", "isScalable" : "1" },
             {"name" : "gray", "callable" : "rgb2gray"},
-            {"name" : "blur", "callable" : "gaussian"},
+            {"name" : "blur", "callable" : "gaussian", "isScalable" : "1" },
             {"name" : "display", "callable" : "display"},
             {"name" : "circle", "callable" : "circle"},
-            {"name" : "storeOne", "callable" : "store1"},
+            {"name" : "storeOne", "callable" : "store1", "isSync" : "1"},
             {"name" : "storeTwo", "callable" : "store2"}
         ]
     },
