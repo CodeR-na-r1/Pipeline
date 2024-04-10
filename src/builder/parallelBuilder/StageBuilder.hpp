@@ -8,10 +8,10 @@
 #include <functional>
 #include <stdexcept>
 
-#include "../builder/IStageBuilder.hpp"
-#include "../detail/chooser/Chooser.hpp"
-#include "../Parser/Parser.hpp"
-#include "../StageManager/StageManager.hpp"
+#include "IStageBuilder.hpp"
+#include "../../detail/chooser/Chooser.hpp"
+#include "../../Parser/Parser.hpp"
+#include "../../StageManager/StageManager.hpp"
 
 #include "StageAssembly.hpp"
 
@@ -19,10 +19,10 @@ namespace Pipeline {
 
 	namespace Builder {
 
-		template <typename Traits>	// use decltype from user code and add concept in this place
+		template <typename Traits>
 		class StageBuilder : public IStageBuilder<typename Traits::DataT, typename Traits::DaoT> {
 
-			using DataT = typename Traits::DataT;	//	typename maybe
+			using DataT = typename Traits::DataT;
 			using BrokerT = typename Traits::BrokerT;
 			using DaoT = typename Traits::DaoT;
 
@@ -61,7 +61,6 @@ namespace Pipeline {
 				return *this;
 			}
 
-			// CHECK THIS METHOD -> return dangerous!
 			[[nodiscard]]
 			std::unique_ptr<IStageBuilder<DataT, DaoT>> build() {
 
