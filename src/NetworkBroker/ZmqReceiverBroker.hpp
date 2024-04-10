@@ -4,6 +4,7 @@
 
 #include <string>
 #include <memory>
+#include <chrono>
 
 #include "zmq.hpp"
 
@@ -11,65 +12,59 @@ namespace Pipeline {
 
     namespace Broker {
 
-        template <typename Traits>
-            requires requires (Traits traits, typename Traits::DeserializerT deserializator) {
+        using namespace std::chrono_literals;
 
-            typename Traits::DataT;
-            typename Traits::TensorT;
-            typename Traits::QueueT;
-            typename Traits::DeserializerT;
+        class ZmqReceiverBroker : public IBrokerReceiver<std::shared_ptr<zmq::message_t>> {
 
-            deserializator(std::shared_ptr<zmq::message_t>{});
+        public:
 
-        }
-        class ZmqReceiverBroker :public IBrokerReceiver {
+            using BrokerT = std::shared_ptr<zmq::message_t>;
 
-            std::string ip;
-            const int port;
+        private:
 
-            zmq::context_t ctx;
-            std::unique_ptr<zmq::socket_t> sck;
+            std::string ip{};
+            const int port{};
 
-            std::shared_ptr<zmq::message_t> msg;
+            zmq::context_t ctx{};
+            std::unique_ptr<zmq::socket_t> sck{};
 
-            std::shared_ptr<typename Traits::QueueT> queue;
-            typename Traits::DeserializerT deserializator;
+            BrokerT msg{};
 
         public:
 
             ZmqReceiverBroker() = delete;
 
-            ZmqReceiverBroker(const std::string ip, const int port, std::shared_ptr<typename Traits::QueueT> queue) : IBrokerReceiver(), ip(ip), port(port), queue(queue) {}
+            ZmqReceiverBroker(const std::string ip, const int port) : IBrokerReceiver<BrokerT>(), ip(ip), port(port) {}
+
+            ZmqReceiverBroker(ZmqReceiverBroker&&) = default;
+
+            std::unique_ptr<IBrokerReceiver> build() {
+
+                return std::unique_ptr<IBrokerReceiver>{ new ZmqReceiverBroker{ std::move(*this) } };
+            }
 
             virtual void connect() override {
 
                 sck.reset(new zmq::socket_t{ ctx, zmq::socket_type::sub });
-                sck->connect(std::string{ "tcp://" + ip + ":" + to_string(port) });
+                sck->connect(std::string{ "tcp://" + ip + ":" + std::to_string(port) });
                 sck->set(zmq::sockopt::subscribe, "");
             }
 
-            virtual bool handleMessage() override {
+            virtual BrokerT handleMessage() override {
 
                 if (*sck) { // connection check
 
                     msg.reset(new zmq::message_t);
 
-                    zmq::recv_result_t result = sck->recv(*msg, zmq::recv_flags::dontwait);  // change flag after debugging
+                    zmq::recv_result_t result = sck->recv(*msg, zmq::recv_flags::dontwait);
 
-                    if (!result)  // instead of assert below
-                    {
-                        std::this_thread::sleep_for(10ms);    // delete after debugging (and change flag)
-                        return false;
+                    if (!result) {
+                        std::this_thread::sleep_for(10ms);
+                        return {};
                     }
 
-                    auto tensor = deserializator(msg);
-
-                    while (!queue->push(tensor)) {}
-
-                    return true;
+                    return msg;
                 }
-
-                return false;
             }
         };
     }
