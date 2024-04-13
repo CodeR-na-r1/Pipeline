@@ -78,7 +78,7 @@ namespace Pipeline {
 				stageCallables.clear();
 
 				// put stage in vector
-				for (auto stageIt = stagesMap.begin(); stageIt != stagesMap.end(); ++stageIt) {
+				for (auto&& stageIt = stagesMap.begin(); stageIt != stagesMap.end(); ++stageIt) {
 
 					// preparing the necessary objects
 					auto&& inputQueue = inputQueueMap.at(stageIt->second.getId());
@@ -89,7 +89,7 @@ namespace Pipeline {
 					// create function
 					std::function<void(void)> callable = [id = stageIt->first, inputQueue, outputQueues, executor, measurements, mapperFromDao, mapperToDao]() {
 
-						auto startTimer = std::chrono::high_resolution_clock::now();
+						auto&& startTimer = std::chrono::high_resolution_clock::now();
 
 						if (inputQueue->hasValue()) {
 
@@ -102,7 +102,7 @@ namespace Pipeline {
 									while (!q->push(res)) {}
 								}
 
-								auto finishTimer = std::chrono::high_resolution_clock::now();
+								auto&& finishTimer = std::chrono::high_resolution_clock::now();
 
 								measurements->push(std::chrono::duration<double, std::milli>(finishTimer - startTimer).count());
 							}
