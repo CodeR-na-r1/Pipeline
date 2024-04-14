@@ -22,7 +22,7 @@ namespace Pipeline {
 
 			MonitoringBuilder() : IMonitoringBuilder<DaoT>() {}
 
-			MonitoringBuilder& addMonitoringCallback(const std::function<void(std::shared_ptr<detail::IMonitoringMeasurements>)> monitoringCallback) {
+			virtual MonitoringBuilder& addMonitoringCallback(const std::function<void(std::shared_ptr<detail::IMonitoringMeasurements>)> monitoringCallback) override {
 
 				this->monitoringCallbacks.push_back(monitoringCallback);
 
