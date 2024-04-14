@@ -65,6 +65,8 @@ namespace Pipeline {
 
                     return msg;
                 }
+
+                throw std::runtime_error{ "Broker not connected! Call \'connect\' method! <from ZmqReceiverBroker::handleMessage()>" };
             }
         };
     }
