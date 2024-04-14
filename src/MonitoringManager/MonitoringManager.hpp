@@ -6,22 +6,24 @@ namespace Pipeline {
 
 	namespace Monitoring {
 
-		template <typename DaoT>
-		class MonitoringManager : public IMonitoringManager<DaoT> {
+		class MonitoringManager : public IMonitoringManager {
 
-			std::unordered_map<std::size_t, Connector::IConnector<DaoT>> queuesMap;
-			std::unordered_map<std::size_t, detail::IMeasurements> measurementsMap;
-
-			// cond variable
-			// собирает данные и ддает доступ, оповещая
-			// для того чтобы все сращзу не долбилдись до стадий, тем самым только мешая
-			// пользователь может сам написать функцию любую, в том числе и для отправки показателей куда угодно, просто добавив в билдер пайплайна функцию, которая принимает поинтер на конст объект (интерфейс) мониторинга
+			std::vector<std::function<void(void)>> callables;
+			std::function<void(void)> stopFunction{};
 
 		public:
 
-			MonitoringManager() : IMonitoringManager<DaoT>() {}
+			MonitoringManager(std::vector<std::function<void(void)>> callables, std::function<void(void)> stopFunction) : IMonitoringManager(), callables(callables), stopFunction(stopFunction) {}
 
+			virtual const std::vector<std::function<void(void)>>& getCallables() override {
 
+				return callables;
+			}
+
+			virtual const std::function<void(void)>& getStopFunction() override {
+
+				return stopFunction;
+			}
 		};
 	}
 }
