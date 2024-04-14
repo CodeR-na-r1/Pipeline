@@ -39,9 +39,9 @@ namespace Pipeline {
 			virtual std::shared_ptr<Monitoring::IMonitoringManager> build(const std::unordered_map<std::size_t, std::shared_ptr<Connector::IConnector<DaoT>>>& queuesMap, const std::unordered_map<std::size_t, std::shared_ptr<detail::IMeasurements>>& measurementsMap) override {
 
 				MonitoringAssembly<DaoT> mAsm;
-				auto&& resCallables = mAsm.getCallables(monitoringCallbacks, queuesMap, measurementsMap);
+				auto&& [resCallables, stopFunc] = mAsm.getCallables(monitoringCallbacks, queuesMap, measurementsMap);
 
-				return std::shared_ptr<Monitoring::IMonitoringManager>{new Monitoring::MonitoringManager{ resCallables }};
+				return std::shared_ptr<Monitoring::IMonitoringManager>{new Monitoring::MonitoringManager{ resCallables, stopFunc }};
 			}
 		};
 	}

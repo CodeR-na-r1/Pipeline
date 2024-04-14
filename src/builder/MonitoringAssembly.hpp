@@ -8,10 +8,11 @@
 #include <vector>
 #include <functional>
 
+#include <type_traits>
+
 #include "../detail/monitoring/IMeasurements.hpp"
 #include "../connector/IConnector.hpp"
 #include "../detail/monitoring/MonitoringMeasurements.hpp"
-
 
 namespace Pipeline {
 
@@ -23,11 +24,15 @@ namespace Pipeline {
 		struct MonitoringAssembly {
 
 			[[nodiscard]]
-			std::vector<std::function<void(void)>> getCallables(const std::vector<std::function<void(std::shared_ptr<detail::IMonitoringMeasurements>)>> monitoringCallbacks,
+			std::pair<std::vector<std::function<void(void)>>, std::function<void(void)>> getCallables(const std::vector<std::function<void(std::shared_ptr<detail::IMonitoringMeasurements>)>> monitoringCallbacks,
 				const std::unordered_map<std::size_t, std::shared_ptr<Connector::IConnector<DaoT>>>& queuesMap,
 				const std::unordered_map<std::size_t, std::shared_ptr<detail::IMeasurements>>& measurementsMap) {
 
-				std::shared_ptr<std::barrier> barrier{ new std::barrier{ std::ssize(monitoringCallbacks) + 1 } };
+				std::shared_ptr<std::atomic_bool> isEndPhase{ new std::atomic_bool{} };
+				auto completeFunc = [isEndPhase]() noexcept { isEndPhase->store(true, std::memory_order_relaxed); };
+
+				auto barrierRawPointer = new std::barrier{ std::ssize(monitoringCallbacks) + 1, completeFunc };
+				std::shared_ptr<std::remove_pointer<decltype(barrierRawPointer)>::type> barrier{ barrierRawPointer };
 
 				std::unordered_map<std::size_t, std::size_t> queueLoad{};
 				std::unordered_map<std::size_t, double> avgTimePerCallable{};
@@ -38,12 +43,12 @@ namespace Pipeline {
 				}
 
 				auto&& rawPointer = new detail::MonitoringMeasurements{ queueLoad, avgTimePerCallable };
-				std::shared_ptr<detail::IMonitoringMeasurements> mMeasurements = { rawPointer };
+				std::shared_ptr<detail::IMonitoringMeasurements> mMeasurements{ rawPointer };
 
 				std::vector<std::function<void(void)>> resCallbacks{};
 
 				// main monitoring thread
-				auto callable = std::function<void(void)>{ [queuesMap, measurementsMap, rawPointer, mMeasurements, barrier]() {
+				auto callable = std::function<void(void)>{ [queuesMap, measurementsMap, rawPointer, barrier]() {
 
 					for (auto&& it : queuesMap) {
 
@@ -53,14 +58,14 @@ namespace Pipeline {
 
 					barrier->arrive_and_wait();
 
-					std::this_thread::sleep_until(3000ms);
+					std::this_thread::sleep_for(3000ms);
 				} };
 				resCallbacks.push_back(std::move(callable));
 
 				// monitoring subscribers threads
-				for (auto&& it : monitoringCallbacks) {
+				for (auto it : monitoringCallbacks) {
 
-					callable = std::function<void(void)>{ [mMeasurements, barrier]() {
+					callable = std::function<void(void)>{ [it, mMeasurements, barrier]() {
 
 						barrier->arrive_and_wait();
 
@@ -69,7 +74,18 @@ namespace Pipeline {
 					resCallbacks.push_back(std::move(callable));
 				}
 
-				return resCallbacks;
+				auto stopFunction = std::function<void(void)>{ [isEndPhase, barrier]() {
+
+					isEndPhase->store(false, std::memory_order_release);
+
+					while (!isEndPhase->load(std::memory_order_acquire)) {
+
+						barrier->arrive();
+					}
+					}
+				};
+
+				return { resCallbacks, stopFunction };
 			}
 		};
 	}
