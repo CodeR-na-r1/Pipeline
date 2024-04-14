@@ -69,6 +69,8 @@ namespace Pipeline {
 
 			rNetworkMTPool.join_all();
 			stagesMTPool.join_all();
+
+			components.monitoringM->getStopFunction()();
 			monitoringMTPool.join_all();
 		}
 	};
