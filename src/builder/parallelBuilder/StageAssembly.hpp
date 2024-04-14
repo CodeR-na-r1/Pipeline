@@ -8,7 +8,7 @@
 #include <functional>
 
 #include "../../pipeline/Stage.hpp"
-#include "../../connector/MPMCConnector.hpp"
+#include "../../connector/SPSCConnector.hpp"
 #include "../../detail/monitoring/Measurements.hpp"
 
 namespace Pipeline {
@@ -44,7 +44,7 @@ namespace Pipeline {
 
 				// fill
 
-				inputQueueMap.insert({ 0, std::shared_ptr<Connector::IConnector<DaoT>>{new Connector::MPMCConnector<DaoT, 1024>{}} });
+				inputQueueMap.insert({ 0, std::shared_ptr<Connector::IConnector<DaoT>>{new Connector::SPSCConnector<DaoT, 1024>{}} });
 
 				std::queue<Stage::Stage<DataT>*> queue;
 				queue.push(&stages);
@@ -60,7 +60,7 @@ namespace Pipeline {
 
 					for (auto&& child : current->getChilds()) {
 
-						std::shared_ptr<Connector::IConnector<DaoT>> temp{ new Connector::MPMCConnector<DaoT, 1024>{} };
+						std::shared_ptr<Connector::IConnector<DaoT>> temp{ new Connector::SPSCConnector<DaoT, 1024>{} };
 						outputQueuesMap.at(current->getId()).push_back(temp);
 						inputQueueMap.insert({ child.getId(), temp });
 						queue.push(&child);
