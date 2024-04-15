@@ -87,11 +87,16 @@ namespace Pipeline {
 
 				StageAssembly<DataT, DaoT> sAsm{};
 
-				sAsm.initStages(std::move(stages));
+				sAsm.initStages(stages);
 
 				sAsm.initCallables(mapperFromDao, mapperToDao);
 
 				return std::shared_ptr<Stage::IStageManager<DataT, DaoT>>{ new Stage::StageManager<DataT, DaoT>{ std::move(sAsm.stagesMap), sAsm.inputQueueMap, sAsm.outputQueuesMap, sAsm.measurementsMap, sAsm.stageCallables }};
+			}
+
+			virtual const Stage::Stage<DataT>& getStages() override {
+
+				return stages;
 			}
 		};
 	}

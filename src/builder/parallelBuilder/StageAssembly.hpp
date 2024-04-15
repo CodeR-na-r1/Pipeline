@@ -34,7 +34,7 @@ namespace Pipeline {
 				return stageCallables;
 			}
 
-			void initStages(Stage::Stage<DataT>&& stages) {
+			void initStages(const Stage::Stage<DataT>& stages) {
 
 				// reset
 				stagesMap.clear();
@@ -44,9 +44,9 @@ namespace Pipeline {
 
 				// fill
 
-				inputQueueMap.insert({ 0, std::shared_ptr<Connector::IConnector<DaoT>>{new Connector::SPSCConnector<DaoT, 1024>{}} });
+				inputQueueMap.insert({ stages.getId(), std::shared_ptr<Connector::IConnector<DaoT>>{new Connector::SPSCConnector<DaoT, 1024>{}} });
 
-				std::queue<Stage::Stage<DataT>*> queue;
+				std::queue<const Stage::Stage<DataT>*> queue;
 				queue.push(&stages);
 
 				while (!queue.empty()) {
