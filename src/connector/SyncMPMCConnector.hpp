@@ -43,5 +43,35 @@ namespace Pipeline {
 				return storage.extract(data);
 			}
 		};
+
+		template <typename IDType, typename DataT, size_t queueCapacity>
+		class SyncMapConnector<Frame::IDFrame<IDType, DataT>, queueCapacity> : public IConnector<Frame::IDFrame<IDType, DataT>> {
+
+			using FrameDataT = Frame::IDFrame<IDType, DataT>;
+
+			using containerT = detail::SyncMapConnector<IDType, FrameDataT>;
+
+			containerT storage;
+
+		public:
+
+			SyncMapConnector() : IConnector<FrameDataT>(), storage(queueCapacity) {}
+
+			virtual bool push(const FrameDataT& data) override {
+				return storage.insert(std::pair{ data.getID(), data }).second;
+			}
+
+			virtual bool hasValue() override {
+				return storage.hasValue();
+			}
+
+			virtual std::size_t size() override {
+				return storage.size();
+			}
+
+			virtual bool extract(FrameDataT& data) override {
+				return storage.extract(data);
+			}
+		};
 	}
 }
