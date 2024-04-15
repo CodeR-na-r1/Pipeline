@@ -10,9 +10,9 @@ namespace Pipeline {
 
         struct Measurements : public IMeasurements {
 
-            std::uint64_t counter;
-            double accumulator;
-            std::mutex guard;
+            std::uint64_t counter{};
+            double accumulator{};
+            std::mutex guard{};
 
             Measurements() : IMeasurements() {}
 
