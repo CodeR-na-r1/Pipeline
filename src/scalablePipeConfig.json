@@ -16,8 +16,8 @@
             {"name" : "blur", "callable" : "gaussian", "isScalable" : "1" },
             {"name" : "display", "callable" : "display"},
             {"name" : "circle", "callable" : "circle"},
-            {"name" : "storeOne", "callable" : "store1", "isSync" : "1"},
-            {"name" : "storeTwo", "callable" : "store2"}
+            {"name" : "storeOne", "callable" : "store1", "isScalable" : "1"},
+            {"name" : "storeTwo", "callable" : "store2", "isScalable" : "1", "isSync" : "1"}
         ]
     },
 
