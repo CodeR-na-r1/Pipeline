@@ -9,10 +9,12 @@ namespace Pipeline {
 		template <typename IDType, typename DataT>
 		class IDFrame : public IIDFrame<IDType, DataT> {
 
-			IDType id;
-			DataT data;
+			IDType id{};
+			DataT data{};
 
 		public:
+
+			IDFrame() : IIDFrame<IDType, DataT>() {}
 
 			IDFrame(const IDType& id, const DataT& data) : IIDFrame<IDType, DataT>(), id(id), data(data) {}
 
