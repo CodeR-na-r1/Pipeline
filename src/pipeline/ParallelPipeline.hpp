@@ -44,7 +44,7 @@ namespace Pipeline {
 
 						callable();
 					}
-					});
+				});
 			}
 
 			for (auto&& it : components.monitoringM->getCallables()) {
