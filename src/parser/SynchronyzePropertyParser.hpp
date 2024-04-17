@@ -31,7 +31,7 @@ namespace Pipeline {
 
 					if (stage.contains("isSync")) {
 
-						auto&& id = detail::nameToId(stage["name"]);
+						auto&& id = detail::nameToId(stages, stage["name"]);
 
 						if (id.has_value())
 							res.insert(id.value());
