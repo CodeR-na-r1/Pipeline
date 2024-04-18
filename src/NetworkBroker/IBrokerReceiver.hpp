@@ -4,14 +4,14 @@ namespace Pipeline {
 
     namespace Broker {
 
-        template<typename BrokerT>
+        template<typename BrokerInputT>
         class IBrokerReceiver {
 
         public:
 
             virtual void connect() = 0;
 
-            virtual BrokerT handleMessage() = 0;
+            virtual BrokerInputT handleMessage() = 0;
         };
     }
 }

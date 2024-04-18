@@ -18,7 +18,7 @@ namespace Pipeline {
 
         public:
 
-            using BrokerT = std::shared_ptr<zmq::message_t>;
+            using BrokerInputT = std::shared_ptr<zmq::message_t>;
 
         private:
 
@@ -28,13 +28,13 @@ namespace Pipeline {
             zmq::context_t ctx{};
             std::unique_ptr<zmq::socket_t> sck{};
 
-            BrokerT msg{};
+            BrokerInputT msg{};
 
         public:
 
             ZmqReceiverBroker() = delete;
 
-            ZmqReceiverBroker(const std::string ip, const int port) : IBrokerReceiver<BrokerT>(), ip(ip), port(port) {}
+            ZmqReceiverBroker(const std::string ip, const int port) : IBrokerReceiver<BrokerInputT>(), ip(ip), port(port) {}
 
             ZmqReceiverBroker(ZmqReceiverBroker&&) = default;
 
@@ -50,7 +50,7 @@ namespace Pipeline {
                 sck->set(zmq::sockopt::subscribe, "");
             }
 
-            virtual BrokerT handleMessage() override {
+            virtual BrokerInputT handleMessage() override {
 
                 if (*sck) { // connection check
 
