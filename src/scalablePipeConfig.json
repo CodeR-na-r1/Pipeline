@@ -4,7 +4,7 @@
     ],
     
     "out" : [
-        {"broker" : "zmq", "ip" : "127.0.0.1", "port" : "5560", "deserializator" : "ndarray"}
+        {"afterStage" : "storeTwo", "broker" : "zmq", "ip" : "127.0.0.1", "port" : "6668", "deserializator" : "ndarray"}
     ],
 
     "stages" : {
