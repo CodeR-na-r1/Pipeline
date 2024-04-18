@@ -1,0 +1,1 @@
+This project is designed to create a dynamic library file that will contain custom function code.
