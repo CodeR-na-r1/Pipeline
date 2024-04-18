@@ -19,7 +19,7 @@ int main() {
 	// params
 
 	const std::string fileName = "../../dataStream/video/video1080.webm";
-	const int FREQUENCE = 50;	// fps
+	const int FREQUENCE = 20;	// fps
 
 	const std::string ip = "127.0.0.1";
 	const int port = 5558;
@@ -34,6 +34,9 @@ int main() {
 		std::cerr << "Error opening file" << std::endl;
 		return -1;
 	}
+
+	std::cout << "Press for start" << std::endl;
+	(void)std::getchar();
 
 	std::atomic_uint16_t fps{};
 
@@ -131,7 +134,8 @@ int main() {
 		}
 	} };
 
-	(void)getchar();
+	std::cout << "Press for exit" << std::endl;
+	(void)std::getchar();
 
 	isEndWork = true;
 

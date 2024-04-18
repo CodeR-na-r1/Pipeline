@@ -4,11 +4,11 @@ import cv2
 
 import capnp
 
-FILENAME = "video/video2160.webm"
-FREQUECE = 10   # frames per second
+FILENAME = "video/video1080.webm"
+FREQUENCE = 50   # frames per second
 port = 5558
 
-sleepTime = 1 / FREQUECE # millisecnods
+sleepTime = 1 / FREQUENCE # millisecnods
 
 cap = cv2.VideoCapture(FILENAME)
 
