@@ -12,11 +12,11 @@ namespace Pipeline {
 
 	namespace Network {
 
-		template <typename BrokerT, typename DataT, typename DaoT>
+		template <typename BrokerInputT, typename DataT, typename DaoT>
 		class StandartReceiverNetworkManager : public IReceiverNetworkManager {
 
-			std::unique_ptr<Broker::IBrokerReceiver<BrokerT>> broker;
-			std::unique_ptr<Proto::IDeserializationManager<BrokerT, DataT>> deserializator;
+			std::unique_ptr<Broker::IBrokerReceiver<BrokerInputT>> broker;
+			std::unique_ptr<Proto::IDeserializationManager<BrokerInputT, DataT>> deserializator;
 			std::shared_ptr<Connector::IConnector<DaoT>> queue;
 			std::function<DaoT(DataT)> mapper;
 
@@ -24,8 +24,8 @@ namespace Pipeline {
 
 			StandartReceiverNetworkManager() = delete;
 
-			StandartReceiverNetworkManager(std::unique_ptr<Broker::IBrokerReceiver<BrokerT>> broker,
-				std::unique_ptr<Proto::IDeserializationManager<BrokerT, DataT>> deserializator,
+			StandartReceiverNetworkManager(std::unique_ptr<Broker::IBrokerReceiver<BrokerInputT>> broker,
+				std::unique_ptr<Proto::IDeserializationManager<BrokerInputT, DataT>> deserializator,
 				std::shared_ptr<Connector::IConnector<DaoT>> queue,
 				std::function<DaoT(DataT)> mapper)
 				: IReceiverNetworkManager(), broker(std::move(broker)), deserializator(std::move(deserializator)), queue(queue), mapper(mapper) {
