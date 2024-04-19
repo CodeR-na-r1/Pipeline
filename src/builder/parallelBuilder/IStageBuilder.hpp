@@ -5,6 +5,8 @@
 
 #include "../../StageManager/IStageManager.hpp"
 
+#include "../../pipeline/Stage.hpp"
+
 namespace Pipeline {
 
 	namespace Builder {
@@ -12,7 +14,9 @@ namespace Pipeline {
 		template <typename DataT, typename DaoT>
 		struct IStageBuilder {
 
-			virtual std::shared_ptr<Stage::IStageManager<DataT, DaoT>> build(std::function<DataT(DaoT)>, std::function<DaoT(DaoT, DataT)>) = 0;
+			virtual std::shared_ptr<Stage::IStageManager<DataT, DaoT>> build(std::vector<std::pair<std::string, std::shared_ptr<Connector::IConnector<DaoT>>>>&, std::function<DataT(DaoT)>, std::function<DaoT(DaoT, DataT)>) = 0;
+
+			virtual const Stage::Stage<DataT>& getStages() = 0;
 		};
 	}
 }
