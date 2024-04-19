@@ -19,11 +19,11 @@ namespace Pipeline {
 		class ReceiverNetworkManagerBuilder : public IReceiverNetworkManagerBuilder<typename Traits::DataT, typename Traits::DaoT> {
 
 			using DataT = typename Traits::DataT;
-			using BrokerT = typename Traits::BrokerT;
+			using BrokerInputT = typename Traits::BrokerInputT;
 			using DaoT = typename Traits::DaoT;
 
-			std::unique_ptr<Broker::IBrokerReceiver<BrokerT>> broker{};
-			std::unique_ptr<Proto::IDeserializationManager<BrokerT, DataT>> deserializator{};
+			std::unique_ptr<Broker::IBrokerReceiver<BrokerInputT>> broker{};
+			std::unique_ptr<Proto::IDeserializationManager<BrokerInputT, DataT>> deserializator{};
 
 		public:
 
@@ -31,14 +31,14 @@ namespace Pipeline {
 
 			ReceiverNetworkManagerBuilder(ReceiverNetworkManagerBuilder&&) = default;
 
-			ReceiverNetworkManagerBuilder& setBroker(std::unique_ptr<Broker::IBrokerReceiver<BrokerT>> iBroker) {
+			ReceiverNetworkManagerBuilder& setBroker(std::unique_ptr<Broker::IBrokerReceiver<BrokerInputT>> iBroker) {
 
 				broker = std::move(iBroker);
 
 				return *this;
 			}
 
-			ReceiverNetworkManagerBuilder& setDeserializator(std::unique_ptr<Proto::IDeserializationManager<BrokerT, DataT>> iDeserializator) {
+			ReceiverNetworkManagerBuilder& setDeserializator(std::unique_ptr<Proto::IDeserializationManager<BrokerInputT, DataT>> iDeserializator) {
 
 				deserializator = std::move(iDeserializator);
 
@@ -58,7 +58,7 @@ namespace Pipeline {
 			[[nodiscard]]
 			virtual std::shared_ptr<Network::IReceiverNetworkManager> build(std::shared_ptr<Connector::IConnector<DaoT>> queue, std::function<DaoT(DataT)> mapper) override {
 
-				return std::shared_ptr<Network::IReceiverNetworkManager>{ new Network::StandartReceiverNetworkManager<BrokerT, DataT, DaoT>{
+				return std::shared_ptr<Network::IReceiverNetworkManager>{ new Network::StandartReceiverNetworkManager<BrokerInputT, DataT, DaoT>{
 					std::move(broker),
 					std::move(deserializator),
 					queue,
