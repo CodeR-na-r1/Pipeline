@@ -5,7 +5,7 @@ set (PROJECT SetupProject)
 project(${PROJECT} VERSION 1.0)
 
 # dependency search
-FIND_PACKAGE(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED)
 
 find_package(xtensor REQUIRED)
 
@@ -26,4 +26,7 @@ enable_testing()
 
 add_subdirectory(src)
 add_subdirectory(benchmark)
+add_subdirectory(createDL)
+add_subdirectory(dataStream)
+add_subdirectory(examples)
 add_subdirectory(test)

@@ -11,7 +11,7 @@ project(${PROJECT} VERSION 1.0 LANGUAGES CXX)
 include_directories(${CMAKE_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-add_executable (Source source.cpp)
+add_executable (Source Source.cpp)
 
 # target_include_directories(Source PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
