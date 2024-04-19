@@ -10,6 +10,7 @@
 #include "../../pipeline/ParallelPipeline.hpp"
 
 #include "../IReceiverNetworkManagerBuilder.hpp"
+#include "../ISendlerNetworkManagerBuilder.hpp"
 #include "IStageBuilder.hpp"
 #include "../IMonitoringBuilder.hpp"
 
@@ -17,7 +18,7 @@ namespace Pipeline {
 
 	namespace Builder {
 
-		template <typename BrokerT, typename DataT>
+		template <typename DataT>
 		class ParallelPipelineBuilder {
 
 		public:
@@ -27,6 +28,7 @@ namespace Pipeline {
 		private:
 
 			std::vector<std::unique_ptr<IReceiverNetworkManagerBuilder<DataT, DaoT>>> inputNMBuilder{};
+			std::vector<std::unique_ptr<ISendlerNetworkManagerBuilder<DataT, DaoT>>> outputNMBuilder{};
 			std::unique_ptr<IStageBuilder<DataT, DaoT>> stageBuilder{};
 			std::unique_ptr<IMonitoringBuilder<DaoT>> monitoringBuilder{};
 
@@ -41,6 +43,13 @@ namespace Pipeline {
 			ParallelPipelineBuilder& addReceiverNetworkManager(std::unique_ptr<IReceiverNetworkManagerBuilder<DataT, DaoT>> iNMBuilder) {
 
 				inputNMBuilder.emplace_back(std::move(iNMBuilder));
+
+				return *this;
+			}
+
+			ParallelPipelineBuilder& addSendlerNetworkManager(std::unique_ptr<ISendlerNetworkManagerBuilder<DataT, DaoT>> iNMBuilder) {
+
+				outputNMBuilder.emplace_back(std::move(iNMBuilder));
 
 				return *this;
 			}
@@ -62,9 +71,16 @@ namespace Pipeline {
 			[[nodiscard]]
 			ParallelPipeline<DataT, DaoT> build() {
 
-				auto&& stageManager = stageBuilder->build(mapperfromDao, mapperToDao);
+				// get queues
+				std::vector<std::pair<std::string, std::shared_ptr<Connector::IConnector<DaoT>>>> outputStages{}; outputStages.reserve(outputNMBuilder.size());
+				for (auto&& it : outputNMBuilder) {
 
-				auto&& receiveConnector = stageManager->getinputQMap().at(0);
+					outputStages.emplace_back(it->getStageConnectName(), std::shared_ptr<Connector::IConnector<DaoT>>{});
+				}
+
+				auto&& stageManager = stageBuilder->build(outputStages, mapperfromDao, mapperToDao);
+
+				auto&& receiveConnector = stageManager->getinputQMap().at(stageBuilder->getStages().getId());
 
 				std::vector<std::shared_ptr<Network::IReceiverNetworkManager>> vRNManager{};
 				for (auto&& itB : inputNMBuilder) {
@@ -72,9 +88,15 @@ namespace Pipeline {
 					vRNManager.push_back(itB->build(receiveConnector, mapperToNewDao));
 				}
 
+				std::vector<std::shared_ptr<Network::ISendlerNetworkManager>> vSNManager{};
+				for (std::size_t i{}; i < outputNMBuilder.size(); ++i) {
+
+					vSNManager.push_back(outputNMBuilder[i]->build(outputStages[i].second, mapperfromDao));
+				}
+
 				auto&& monitoringManager = monitoringBuilder->build(stageManager->getinputQMap(), stageManager->getMeasurementMap());
 
-				return Pipeline::ParallelPipeline<DataT, DaoT>{ detail::ParallelPipelineComponents<DataT, DaoT>{ .rNetworkM = vRNManager, .stagesM = stageManager, .monitoringM = monitoringManager } };
+				return Pipeline::ParallelPipeline<DataT, DaoT>{ detail::ParallelPipelineComponents<DataT, DaoT>{ .rNetworkM = vRNManager, .stagesM = stageManager, .monitoringM = monitoringManager, .sNetworkM = vSNManager } };
 			}
 		};
 	}
