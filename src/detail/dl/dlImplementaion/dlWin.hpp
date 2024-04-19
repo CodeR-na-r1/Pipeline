@@ -25,7 +25,7 @@ namespace Pipeline {
 				hinstLib = LoadLibrary(TEXT(dlFileName.c_str()));
 			}
 
-			DL(DL&&) = default;
+			DL(DL&&) = delete;
 
 			bool operator()(void* arg) {
 
