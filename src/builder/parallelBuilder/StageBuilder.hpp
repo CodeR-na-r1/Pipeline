@@ -23,7 +23,6 @@ namespace Pipeline {
 		class StageBuilder : public IStageBuilder<typename Traits::DataT, typename Traits::DaoT> {
 
 			using DataT = typename Traits::DataT;
-			using BrokerT = typename Traits::BrokerT;
 			using DaoT = typename Traits::DaoT;
 
 			std::string configFilename{};
@@ -83,11 +82,11 @@ namespace Pipeline {
 			}
 
 			[[nodiscard]]
-			virtual std::shared_ptr<Stage::IStageManager<DataT, DaoT>> build(std::function<DataT(DaoT)> mapperFromDao, std::function<DaoT(DaoT, DataT)> mapperToDao) override {
+			virtual std::shared_ptr<Stage::IStageManager<DataT, DaoT>> build(std::vector<std::pair<std::string, std::shared_ptr<Connector::IConnector<DaoT>>>>& outputQueues, std::function<DataT(DaoT)> mapperFromDao, std::function<DaoT(DaoT, DataT)> mapperToDao) override {
 
 				StageAssembly<DataT, DaoT> sAsm{};
 
-				sAsm.initStages(stages);
+				sAsm.initStages(stages, outputQueues);
 
 				sAsm.initCallables(mapperFromDao, mapperToDao);
 

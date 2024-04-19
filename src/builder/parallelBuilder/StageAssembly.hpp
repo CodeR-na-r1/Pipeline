@@ -11,6 +11,8 @@
 #include "../../connector/SPSCConnector.hpp"
 #include "../../detail/monitoring/Measurements.hpp"
 
+#include "../../detail/functions/StageFunctions.hpp"
+
 namespace Pipeline {
 
 	namespace Builder {
@@ -34,7 +36,7 @@ namespace Pipeline {
 				return stageCallables;
 			}
 
-			void initStages(const Stage::Stage<DataT>& stages) {
+			void initStages(const Stage::Stage<DataT>& stages, std::vector<std::pair<std::string, std::shared_ptr<Connector::IConnector<DaoT>>>>& outputQueues) {
 
 				// reset
 				stagesMap.clear();
@@ -69,6 +71,22 @@ namespace Pipeline {
 					stagesMap.insert({ current->getId(), std::move(*current) });
 
 					queue.pop();
+				}
+
+				for (auto&& it : outputQueues) {
+
+					auto&& stageName = it.first;
+					auto&& idOpt = detail::nameToId(stages, stageName);
+
+					if (!idOpt.has_value())
+						throw std::runtime_error{ std::string{"Stage with name \'"} + stageName + std::string{"\' not found"} };
+
+					auto&& id = idOpt.value();
+
+					std::shared_ptr<Connector::IConnector<DaoT>> temp{ new Connector::SPSCConnector<DaoT, 1024>{} };
+
+					outputQueuesMap[id].push_back(temp);
+					it.second = temp;
 				}
 			}
 
