@@ -14,6 +14,7 @@ namespace Pipeline {
 		boost::thread_group rNetworkMTPool;
 		boost::thread_group stagesMTPool;
 		boost::thread_group monitoringMTPool;
+		boost::thread_group sNetworkMTPool;
 
 	public:
 
@@ -59,6 +60,19 @@ namespace Pipeline {
 					}
 				});
 			}
+
+			for (auto&& it : components.sNetworkM) {
+
+				sNetworkMTPool.create_thread([it]() {
+
+					while (true) {
+
+						boost::this_thread::interruption_point();
+
+						(*it)();
+					}
+				});
+			}
 		}
 
 		void stop() {
@@ -66,12 +80,15 @@ namespace Pipeline {
 			rNetworkMTPool.interrupt_all();
 			stagesMTPool.interrupt_all();
 			monitoringMTPool.interrupt_all();
+			sNetworkMTPool.interrupt_all();
 
 			rNetworkMTPool.join_all();
 			stagesMTPool.join_all();
 
 			components.monitoringM->getStopFunction()();
 			monitoringMTPool.join_all();
+
+			sNetworkMTPool.join_all();
 		}
 	};
 }
