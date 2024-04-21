@@ -3,7 +3,7 @@
 #include <memory>
 #include <functional>
 
-#include "../NetworkManager/IReceiverNetworkManager.hpp"
+#include "../networkManager/IReceiverNetworkManager.hpp"
 #include "../connector/IConnector.hpp"
 
 namespace Pipeline {

@@ -5,10 +5,10 @@
 #include "ISendlerNetworkManagerBuilder.hpp"
 
 #include "SendlerNetworkManagerAssembly.hpp"
-#include "../NetworkManager/StandartSendlerNetworkManager.hpp"
+#include "../networkManager/StandartSendlerNetworkManager.hpp"
 
-#include "../NetworkBroker/IBrokerSendler.hpp"
-#include "../ProtoManager/ISerializationManager.hpp"
+#include "../networkBroker/IBrokerSendler.hpp"
+#include "../protoManager/ISerializationManager.hpp"
 
 namespace Pipeline {
 

@@ -4,8 +4,8 @@
 #include <chrono>
 #include <functional>
 
-#include "../NetworkBroker/IBrokerSendler.hpp"
-#include "../ProtoManager/ISerializationManager.hpp"
+#include "../networkBroker/IBrokerSendler.hpp"
+#include "../protoManager/ISerializationManager.hpp"
 
 namespace Pipeline {
 

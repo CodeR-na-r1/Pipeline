@@ -6,10 +6,10 @@
 
 #include "IReceiverNetworkManagerBuilder.hpp"
 
-#include "../NetworkManager/StandartReceiverNetworkManager.hpp"
+#include "../networkManager/StandartReceiverNetworkManager.hpp"
 
-#include "../NetworkBroker/IBrokerReceiver.hpp"
-#include "../ProtoManager/IDeserializationManager.hpp"
+#include "../networkBroker/IBrokerReceiver.hpp"
+#include "../protoManager/IDeserializationManager.hpp"
 
 namespace Pipeline {
 

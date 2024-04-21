@@ -8,13 +8,19 @@ set (CMAKE_CXX_FLAGS "-std=c++20 -Wall ${CMAKE_CXX_FLAGS}")
 
 project(${PROJECT} VERSION 1.0 LANGUAGES CXX)
 
-find_package(OpenCV REQUIRED)
+get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
-find_package(CapnProto REQUIRED)
+if (NOT IS_SUBPROJECT)
 
-find_package(cppzmq REQUIRED)
+	find_package(OpenCV REQUIRED)
 
-add_executable (dataStream dataStream.cpp)
+	find_package(CapnProto REQUIRED)
+
+	find_package(cppzmq REQUIRED)
+
+endif()
+
+add_executable (dataStream DataStream.cpp)
 
 target_link_libraries(dataStream PRIVATE ${OpenCV_LIBS})
 target_include_directories(dataStream PRIVATE ${OpenCV_INCLUDE_DIRS})

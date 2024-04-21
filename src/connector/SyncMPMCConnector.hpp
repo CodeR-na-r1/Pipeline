@@ -4,7 +4,7 @@
 
 #include "../detail/connector/SyncMapConnector.hpp"
 
-#include "pipeline/frame/IDFrame.hpp"
+#include "../pipeline/frame/IDFrame.hpp"
 
 namespace Pipeline {
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../MonitoringManager/IMonitoringManager.hpp"
+#include "../monitoringManager/IMonitoringManager.hpp"
 
 #include <memory>
 #include <functional>

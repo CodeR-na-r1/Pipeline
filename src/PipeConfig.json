@@ -1,0 +1,33 @@
+{
+    "in" : [
+        {"broker" : "zmq", "ip" : "127.0.0.1", "port" : "5558", "deserializator" : "ndarray"}
+    ],
+    
+    "out" : [
+        {"afterStage" : "storeTwo", "broker" : "zmq", "ip" : "127.0.0.1", "port" : "6668", "deserializator" : "ndarray"}
+    ],
+
+    "stages" : {
+        
+        "start" : "drawLogo",
+        "list" : [
+            {"name" : "drawLogo", "callable" : "drawLogo"},
+            {"name" : "gray", "callable" : "rgb2gray"},
+            {"name" : "blur", "callable" : "gaussian"},
+            {"name" : "display", "callable" : "display"},
+            {"name" : "circle", "callable" : "circle"},
+            {"name" : "storeOne", "callable" : "store1"},
+            {"name" : "storeTwo", "callable" : "store2"}
+        ]
+    },
+
+    "connections" : {
+
+        "list" : [
+            {"from" : "drawLogo", "to" : ["gray", "display", "circle"]},
+            {"from" : "gray", "to" : "blur"},
+            {"from" : "blur", "to" : "storeOne"},
+            {"from" : "circle", "to" : "storeTwo"}
+        ]
+    }
+}

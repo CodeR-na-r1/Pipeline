@@ -10,8 +10,8 @@
 
 #include "IStageBuilder.hpp"
 #include "../../detail/chooser/Chooser.hpp"
-#include "../../Parser/Parser.hpp"
-#include "../../StageManager/StageManager.hpp"
+#include "../../parser/Parser.hpp"
+#include "../../stageManager/StageManager.hpp"
 
 #include "StageAssembly.hpp"
 

@@ -11,9 +11,9 @@ project(${PROJECT} VERSION 1.0 LANGUAGES CXX)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../src)
 
-add_executable (benchmarkLockfreeQueues src/benchmarkLockfreeQueues/benchmarkLockfreeQueues.cpp)
-add_executable (benchmarkStageDataType src/benchmarkStageDataType/benchmarkStageDataType.cpp)
-add_executable (benchmarkSynchronizeConnectors src/benchmarkSynchronizeConnectors/benchmarkSynchronizeConnectors.cpp)
+add_executable (benchmarkLockfreeQueues src/benchmarkLockfreeQueues/BenchmarkLockfreeQueues.cpp)
+add_executable (benchmarkStageDataType src/benchmarkStageDataType/BenchmarkStageDataType.cpp)
+add_executable (benchmarkSynchronizeConnectors src/benchmarkSynchronizeConnectors/BenchmarkSynchronizeConnectors.cpp)
 
 target_include_directories(benchmarkStageDataType PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/benchmarkStageDataType/include)
 

@@ -11,10 +11,10 @@
 
 #include "IScalableStageBuilder.hpp"
 #include "../../detail/chooser/Chooser.hpp"
-#include "../../Parser/Parser.hpp"
-#include "../../Parser/ScalablePropertyParser.hpp"
-#include "../../Parser/SynchronyzePropertyParser.hpp"
-#include "../../StageManager/StageManager.hpp"
+#include "../../parser/Parser.hpp"
+#include "../../parser/ScalablePropertyParser.hpp"
+#include "../../parser/SynchronyzePropertyParser.hpp"
+#include "../../stageManager/StageManager.hpp"
 
 #include "ScalableStageAssembly.hpp"
 

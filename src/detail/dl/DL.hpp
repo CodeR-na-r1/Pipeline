@@ -2,11 +2,11 @@
 
 #ifdef __linux__
 
-#include "dlImplementaion/dlLinux.hpp"
+#include "dlImplementaion/DlLinux.hpp"
 
 #elif _WIN32
 
-#include "dlImplementaion/dlWin.hpp"
+#include "dlImplementaion/DlWin.hpp"
 
 #else
 

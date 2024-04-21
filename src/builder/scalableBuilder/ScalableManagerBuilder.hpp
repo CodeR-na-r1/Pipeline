@@ -2,7 +2,7 @@
 
 #include "IScalableManagerBuilder.hpp"
 
-#include "../../ScalableManager/ScalableManager.hpp"
+#include "../../scalableManager/ScalableManager.hpp"
 #include "ScalableManagerAssembly.hpp"
 
 namespace Pipeline {

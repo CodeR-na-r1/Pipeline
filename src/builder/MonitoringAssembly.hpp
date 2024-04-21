@@ -32,7 +32,7 @@ namespace Pipeline {
 				auto completeFunc = [isEndPhase]() noexcept { isEndPhase->store(true, std::memory_order_relaxed); };
 
 				auto barrierRawPointer = new std::barrier{ std::ssize(monitoringCallbacks) + 1, completeFunc };
-				std::shared_ptr<std::remove_pointer<decltype(barrierRawPointer)>::type> barrier{ barrierRawPointer };
+				std::shared_ptr<typename std::remove_pointer<decltype(barrierRawPointer)>::type> barrier{ barrierRawPointer };
 
 				std::unordered_map<std::size_t, std::size_t> queueLoad{};
 				std::unordered_map<std::size_t, double> avgTimePerCallable{};

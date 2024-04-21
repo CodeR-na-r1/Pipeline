@@ -5,7 +5,7 @@
 
 #include <unordered_set>
 
-#include "../../StageManager/IStageManager.hpp"
+#include "../../stageManager/IStageManager.hpp"
 
 #include "../../pipeline/Stage.hpp"
 

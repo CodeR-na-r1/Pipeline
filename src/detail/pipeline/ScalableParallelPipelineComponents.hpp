@@ -3,14 +3,14 @@
 #include <memory>
 #include <vector>
 
-#include "../../NetworkManager/IReceiverNetworkManager.hpp"
-#include "../../StageManager/IStageManager.hpp"
-#include "../../MonitoringManager/IMonitoringManager.hpp"
-#include "../../NetworkManager/ISendlerNetworkManager.hpp"
+#include "../../networkManager/IReceiverNetworkManager.hpp"
+#include "../../stageManager/IStageManager.hpp"
+#include "../../monitoringManager/IMonitoringManager.hpp"
+#include "../../networkManager/ISendlerNetworkManager.hpp"
 
-#include "../../ScalableManager/IScalableManager.hpp"
+#include "../../scalableManager/IScalableManager.hpp"
 
-#include "../../DLManager/IDLManager.hpp"
+#include "../../dLManager/IDLManager.hpp"
 
 namespace Pipeline {
 

@@ -4,7 +4,7 @@
 #include <memory>
 #include <functional>
 
-#include "../NetworkManager/ISendlerNetworkManager.hpp"
+#include "../networkManager/ISendlerNetworkManager.hpp"
 #include "../connector/IConnector.hpp"
 
 namespace Pipeline {

@@ -5,10 +5,10 @@
 #include <stdexcept>
 #include "memory"
 
-#include "../../Parser/DLParser.hpp"
+#include "../../parser/DLParser.hpp"
 
 #include "DL.hpp"
-#include "../../DLManager/DLManager.hpp"
+#include "../../dLManager/DLManager.hpp"
 
 namespace Pipeline {
 

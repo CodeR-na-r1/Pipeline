@@ -1,0 +1,18 @@
+{
+    "stages" : {
+        
+        "start" : "source",
+        "list" : [
+            {"name" : "source", "callable" : "sourceCallable"},
+            {"name" : "gray", "callable" : "rgb2gray"}
+        ]
+    },
+
+    "connections" : {
+
+        "list" : [
+            {"from" : "source", "to" : ["gray"]},
+            {"from" : "gray", "to" : "error"}
+        ]
+    }
+}

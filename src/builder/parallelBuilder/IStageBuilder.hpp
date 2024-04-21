@@ -3,7 +3,7 @@
 #include <memory>
 #include <functional>
 
-#include "../../StageManager/IStageManager.hpp"
+#include "../../stageManager/IStageManager.hpp"
 
 #include "../../pipeline/Stage.hpp"
 

@@ -16,16 +16,16 @@ include_directories(${CMAKE_SOURCE_DIR}/src)
 
 include_directories(${Boost_INCLUDE_DIRS})
 
-add_executable (stageTest src/pipeline/stageTest.cpp)   # stage test
+add_executable (stageTest src/pipeline/StageTest.cpp)   # stage test
 target_link_libraries(stageTest PRIVATE ${Boost_LIBRARIES})
 
-add_executable (parserTest src/parser/parserTest.cpp)   # parser test
+add_executable (parserTest src/parser/ParserTest.cpp)   # parser test
 target_link_libraries(parserTest PRIVATE ${Boost_LIBRARIES})
 
-add_executable (frameTest src/pipeline/frame/frameTest.cpp)   # frame (DAO) test
+add_executable (frameTest src/pipeline/frame/FrameTest.cpp)   # frame (DAO) test
 target_link_libraries(frameTest PRIVATE ${Boost_LIBRARIES})
 
-add_executable (connectorTest src/connector/connectorTest.cpp)   # connector test
+add_executable (connectorTest src/connector/ConnectorTest.cpp)   # connector test
 target_link_libraries(connectorTest PRIVATE ${Boost_LIBRARIES})
 
 add_test(NAME StageTest COMMAND stageTest)

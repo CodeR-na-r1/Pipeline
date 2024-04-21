@@ -7,7 +7,7 @@
 
 #include "../detail/monitoring/IMonitoringMeasurements.hpp"
 #include "MonitoringAssembly.hpp"
-#include "../MonitoringManager/MonitoringManager.hpp"
+#include "../monitoringManager/MonitoringManager.hpp"
 
 namespace Pipeline {
 

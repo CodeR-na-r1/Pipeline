@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../ScalableManager/IScalableManager.hpp"
+#include "../../scalableManager/IScalableManager.hpp"
 
 #include <memory>
 #include <functional>

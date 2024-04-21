@@ -43,6 +43,7 @@ extern "C" {
 		choosers->push_back({ nameCallable, std::function<cv::Mat(cv::Mat)>{stageCallable} });
 
 		return arg;
+	}
 }
 
 #else
@@ -50,4 +51,3 @@ extern "C" {
 #error Platform not supported!
 
 #endif
-}
