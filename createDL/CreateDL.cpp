@@ -28,7 +28,17 @@ cv::Mat stageCallable(cv::Mat arg) {
 
 #ifdef __linux__
 
+extern "C" {
 
+	void* getChooser(void* arg) {
+
+		std::vector<std::pair<std::string, std::function<cv::Mat(cv::Mat)>>>* choosers = reinterpret_cast<std::vector<std::pair<std::string, std::function<cv::Mat(cv::Mat)>>>*>(arg);
+
+		choosers->push_back({ nameCallable, std::function<cv::Mat(cv::Mat)>{stageCallable} });
+
+		return arg;
+	}
+}
 
 #elif _WIN32
 
