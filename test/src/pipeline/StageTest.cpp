@@ -24,12 +24,12 @@ BOOST_AUTO_TEST_CASE(TestAddChildForStage) {
 	BOOST_CHECK(source.getChilds().size() == 1);
 	BOOST_CHECK(source.getId() == 0);
 	BOOST_CHECK(child.getId() == 1);
-	BOOST_CHECK(source.getChilds()[0].getId() == 2);
+	BOOST_CHECK(source.getChilds()[0].getId() == 1);
 
 	source.addChild(std::move(child));
 	BOOST_CHECK(source.getChilds().size() == 2);
 	BOOST_CHECK(source.getId() == 0);
-	BOOST_CHECK(source.getChilds()[0].getId() == 2);
+	BOOST_CHECK(source.getChilds()[0].getId() == 1);
 	BOOST_CHECK(source.getChilds()[1].getId() == 1);
 
 	BOOST_CHECK(source.getChilds()[0].getName() == "child");

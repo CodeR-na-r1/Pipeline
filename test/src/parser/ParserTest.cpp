@@ -16,7 +16,7 @@ using namespace Pipeline::detail;
 
 BOOST_AUTO_TEST_CASE(TestCreatePipelineByConfigFromFileWithError) {
 
-	std::ifstream fileJsonConfig("../../test/src/pipeline/pipeConfigWithError.json");
+	std::ifstream fileJsonConfig("../../test/src/pipeline/PipeConfigWithError.json");
 
 	BOOST_CHECK(fileJsonConfig.is_open() && "File from object ifstream \'fileJsonConfig\' not open!");
 
@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(TestCreatePipelineByConfigFromFileWithError) {
 
 BOOST_AUTO_TEST_CASE(TestCreatePipelineByConfigFromFile) {
 
-	std::ifstream fileJsonConfig("../../test/src/pipeline/pipeConfig.json");
+	std::ifstream fileJsonConfig("../../test/src/pipeline/PipeConfig.json");
 
 	BOOST_CHECK(fileJsonConfig.is_open() && "File from object ifstream \'fileJsonConfig\' not open!");
 

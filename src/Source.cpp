@@ -65,7 +65,7 @@ int main() try {
         auto logo = cv::imread(std::filesystem::path{ "../../examples/resources/logo.jpg" }.generic_string());
         OpencvChooser chooser{ logo };
 
-        const std::string configFileName{ "../../src/pipeConfig.json" };
+        const std::string configFileName{ "../../src/PipeConfig.json" };
 
         Builder::ParallelPipelineBuilder<UserTraitsPipeline::DataT> pipeBuilder{};
 
@@ -129,7 +129,7 @@ int main() try {
         auto logo = cv::imread(std::filesystem::path{ "../../examples/resources/logo.jpg" }.generic_string());
         OpencvChooser chooser{ logo };
 
-        const std::string configFileName{ "../../src/scalableDynamicPipeConfig.json" };
+        const std::string configFileName{ "../../src/ScalableDynamicPipeConfig.json" };
 
         Builder::ScalableParallelPipelineBuilder<UserTraitsScalablePipeline::DataT> pipeBuilder{};
 
