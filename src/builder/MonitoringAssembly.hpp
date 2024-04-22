@@ -23,9 +23,12 @@ namespace Pipeline {
 		template <typename DaoT>
 		struct MonitoringAssembly {
 
+			std::vector<std::function<void(std::shared_ptr<detail::IMonitoringMeasurements>)>> monitoringCallbacks{};
+
+			MonitoringAssembly() = default;
+
 			[[nodiscard]]
-			std::pair<std::vector<std::function<void(void)>>, std::function<void(void)>> getCallables(const std::vector<std::function<void(std::shared_ptr<detail::IMonitoringMeasurements>)>> monitoringCallbacks,
-				const std::unordered_map<std::size_t, std::shared_ptr<Connector::IConnector<DaoT>>>& queuesMap,
+			std::pair<std::vector<std::function<void(void)>>, std::function<void(void)>> getCallables(const std::unordered_map<std::size_t, std::shared_ptr<Connector::IConnector<DaoT>>>& queuesMap,
 				const std::unordered_map<std::size_t, std::shared_ptr<detail::IMeasurements>>& measurementsMap) {
 
 				std::shared_ptr<std::atomic_bool> isEndPhase{ new std::atomic_bool{} };
@@ -84,6 +87,8 @@ namespace Pipeline {
 					}
 					}
 				};
+
+				monitoringCallbacks.clear();
 
 				return { resCallbacks, stopFunction };
 			}

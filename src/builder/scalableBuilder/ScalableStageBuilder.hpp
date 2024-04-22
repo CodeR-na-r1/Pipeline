@@ -90,6 +90,11 @@ namespace Pipeline {
 				return stages;
 			}
 
+			virtual void resetStages() override {
+
+				stages = {};
+			}
+
 			virtual std::unordered_set<std::size_t> getScalableProperties() override {
 
 				return scalableProperties;

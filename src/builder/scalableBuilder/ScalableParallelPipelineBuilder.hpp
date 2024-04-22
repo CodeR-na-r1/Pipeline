@@ -117,6 +117,8 @@ namespace Pipeline {
 				monitoringBuilder->addMonitoringCallback(scalableManager->getMonitoringCallback());
 				auto&& monitoringManager = monitoringBuilder->build(stageManager->getinputQMap(), stageManager->getMeasurementMap());
 
+				stageBuilder->resetStages();
+
 				return Pipeline::ScalableParallelPipeline<DataT, DaoT>{ detail::ScalableParallelPipelineComponents<DataT, DaoT>{ .dlM = dlManager, .rNetworkM = vRNManager, .stagesM = stageManager, .monitoringM = monitoringManager, .sNetworkM = vSNManager, .scalableM = scalableManager } };
 			}
 		};

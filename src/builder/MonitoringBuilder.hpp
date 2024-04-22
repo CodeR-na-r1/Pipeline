@@ -16,7 +16,7 @@ namespace Pipeline {
 		template <typename DaoT>
 		class MonitoringBuilder : public IMonitoringBuilder<DaoT> {
 
-			std::vector<std::function<void(std::shared_ptr<detail::IMonitoringMeasurements>)>> monitoringCallbacks{};
+			MonitoringAssembly<DaoT> mAsm{};
 
 		public:
 
@@ -24,7 +24,7 @@ namespace Pipeline {
 
 			virtual MonitoringBuilder& addMonitoringCallback(const std::function<void(std::shared_ptr<detail::IMonitoringMeasurements>)> monitoringCallback) override {
 
-				this->monitoringCallbacks.push_back(monitoringCallback);
+				mAsm.monitoringCallbacks.push_back(monitoringCallback);
 
 				return *this;
 			}
@@ -38,8 +38,7 @@ namespace Pipeline {
 			[[nodiscard]]
 			virtual std::shared_ptr<Monitoring::IMonitoringManager> build(const std::unordered_map<std::size_t, std::shared_ptr<Connector::IConnector<DaoT>>>& queuesMap, const std::unordered_map<std::size_t, std::shared_ptr<detail::IMeasurements>>& measurementsMap) override {
 
-				MonitoringAssembly<DaoT> mAsm;
-				auto&& [resCallables, stopFunc] = mAsm.getCallables(monitoringCallbacks, queuesMap, measurementsMap);
+				auto&& [resCallables, stopFunc] = mAsm.getCallables(queuesMap, measurementsMap);
 
 				return std::shared_ptr<Monitoring::IMonitoringManager>{new Monitoring::MonitoringManager{ resCallables, stopFunc }};
 			}

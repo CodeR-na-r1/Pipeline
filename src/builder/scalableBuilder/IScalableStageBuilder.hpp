@@ -22,6 +22,8 @@ namespace Pipeline {
 
 			virtual const Stage::Stage<DataT>& getStages() = 0;
 
+			virtual void resetStages() = 0;
+
 			virtual std::unordered_set<std::size_t> getScalableProperties() = 0;
 
 			virtual const std::string& getConfigFileName() = 0;
