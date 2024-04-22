@@ -4,7 +4,7 @@ set (PROJECT PipeLine)
 
 set (CMAKE_CXX_STANDARD 20)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
-set (CMAKE_CXX_FLAGS "-std=c++20 -Wall ${CMAKE_CXX_FLAGS}")
+set (CMAKE_CXX_FLAGS "-std=c++20 -Wall -ggdb3 ${CMAKE_CXX_FLAGS}") # -ggdb3
 
 project(${PROJECT} VERSION 1.0 LANGUAGES CXX)
 
