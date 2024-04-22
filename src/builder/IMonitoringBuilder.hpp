@@ -20,6 +20,8 @@ namespace Pipeline {
 			virtual IMonitoringBuilder& addMonitoringCallback(const std::function<void(std::shared_ptr<detail::IMonitoringMeasurements>)>) = 0;
 
 			virtual std::shared_ptr<Monitoring::IMonitoringManager> build(const std::unordered_map<std::size_t, std::shared_ptr<Connector::IConnector<DaoT>>>&, const std::unordered_map<std::size_t, std::shared_ptr<detail::IMeasurements>>&) = 0;
+			
+			virtual ~IMonitoringBuilder() = default;
 		};
 	}
 }

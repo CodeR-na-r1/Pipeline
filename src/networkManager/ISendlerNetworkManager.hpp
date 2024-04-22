@@ -7,6 +7,8 @@ namespace Pipeline {
 		struct ISendlerNetworkManager {
 
 			virtual void operator()() = 0;
+			
+			virtual ~ISendlerNetworkManager() = default;
 		};
 	}
 }

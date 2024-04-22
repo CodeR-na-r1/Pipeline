@@ -14,6 +14,8 @@ namespace Pipeline {
 			virtual const IDType getID() const = 0;
 
 			using IFrame<DataT>::getData;
+			
+			virtual ~IIDFrame() = default;
 		};
 	}
 }

@@ -12,6 +12,8 @@ namespace Pipeline {
 		struct IDeserializationManager {
 
 			virtual DataT operator()(BrokerT) = 0;
+			
+			virtual ~IDeserializationManager() = default;
 		};
 	}
 }

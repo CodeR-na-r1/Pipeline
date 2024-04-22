@@ -25,6 +25,8 @@ namespace Pipeline {
 			virtual std::unordered_set<std::size_t> getScalableProperties() = 0;
 
 			virtual const std::string& getConfigFileName() = 0;
+			
+			virtual ~IScalableStageBuilder() = default;
 		};
 	}
 }

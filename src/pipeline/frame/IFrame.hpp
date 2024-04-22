@@ -8,6 +8,8 @@ namespace Pipeline {
 		struct IFrame {
 
 			virtual DataT getData() = 0;
+			
+			virtual ~IFrame() = default;
 		};
 	}
 }

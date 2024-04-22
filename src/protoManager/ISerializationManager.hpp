@@ -8,6 +8,8 @@ namespace Pipeline {
 		struct ISerializationManager {
 
 			virtual BrokerT operator()(DataT) = 0;
+
+			virtual ~ISerializationManager() = default;
 		};
 	}
 }

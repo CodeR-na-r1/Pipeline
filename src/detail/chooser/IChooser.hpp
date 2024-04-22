@@ -13,6 +13,8 @@ namespace Pipeline {
 			virtual bool operator()(const std::string&, std::function<DataT(DataT)>&) = 0;
 
 			virtual void addChoser(const std::pair<std::string, std::function<DataT(DataT)>>&) = 0;
+			
+			virtual ~IChooser() = default;
 		};
 	}
 }

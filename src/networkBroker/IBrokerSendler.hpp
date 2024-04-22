@@ -12,6 +12,8 @@ namespace Pipeline {
             virtual void connect() = 0;
 
             virtual bool handleMessage(BrokerOutputT) = 0;
+
+            virtual ~IBrokerSendler() = default;
         };
     }
 }

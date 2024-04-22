@@ -20,6 +20,8 @@ namespace Pipeline {
 
 			virtual bool extract(DataT& data) = 0;
 
+			virtual ~IConnector() = default;
+
 		};
 
 	}

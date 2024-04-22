@@ -25,6 +25,8 @@ namespace Pipeline {
 			virtual const std::unordered_map<std::size_t, std::vector<std::shared_ptr<Connector::IConnector<DaoT>>>>& getOutputQMap() const = 0;
 
 			virtual const std::unordered_map<std::size_t, std::shared_ptr<detail::IMeasurements>>& getMeasurementMap() const = 0;
+			
+			virtual ~IStageManager() = default;
 		};
 	}
 }

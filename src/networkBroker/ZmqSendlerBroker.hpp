@@ -34,6 +34,7 @@ namespace Pipeline {
 
             ZmqSendlerBroker(const std::string ip, const int port) : IBrokerSendler<BrokerOutputT>(), ip(ip), port(port) {}
 
+            ZmqSendlerBroker(const ZmqSendlerBroker&) = delete;
             ZmqSendlerBroker(ZmqSendlerBroker&&) = default;
 
             std::shared_ptr<IBrokerSendler> build() {

@@ -17,6 +17,8 @@ namespace Pipeline {
 			virtual const std::string& getStageConnectName() = 0;
 
 			virtual std::shared_ptr<Network::ISendlerNetworkManager> build(std::shared_ptr<Connector::IConnector<DaoT>> queue, std::function<DataT(DaoT)> mapper) = 0;
+			
+			virtual ~ISendlerNetworkManagerBuilder() = default;
 		};
 	}
 }

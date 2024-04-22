@@ -9,6 +9,8 @@ namespace Pipeline {
 			virtual void push(double) = 0;
 
 			virtual double pull() = 0;
+			
+			virtual ~IMeasurements() = default;
 		};
 	}
 }

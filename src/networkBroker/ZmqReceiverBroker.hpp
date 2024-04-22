@@ -37,6 +37,7 @@ namespace Pipeline {
 
             ZmqReceiverBroker(const std::string ip, const int port) : IBrokerReceiver<BrokerInputT>(), ip(ip), port(port) {}
 
+            ZmqReceiverBroker(const ZmqReceiverBroker&) = delete;
             ZmqReceiverBroker(ZmqReceiverBroker&&) = default;
 
             std::unique_ptr<IBrokerReceiver> build() {

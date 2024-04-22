@@ -14,6 +14,8 @@ namespace Pipeline {
 		struct IReceiverNetworkManagerBuilder {
 
 			virtual std::shared_ptr<Network::IReceiverNetworkManager> build(std::shared_ptr<Connector::IConnector<DaoT>>, std::function<DaoT(DataT)>) = 0;
+
+			virtual ~IReceiverNetworkManagerBuilder() = default;
 		};
 	}
 }

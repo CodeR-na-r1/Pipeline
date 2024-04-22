@@ -19,9 +19,13 @@ namespace Pipeline {
 
 		template<> class NDArraySerializator<cv::Mat> : public ISerializationManager<cv::Mat, zmq::message_t> {	// spec for cv::Mat
 
-			cv::Size shape;
+			cv::Size shape{};
 
 		public:
+
+			NDArraySerializator() = default;
+			NDArraySerializator(const NDArraySerializator&) = default;
+			NDArraySerializator(NDArraySerializator&&) = default;
 
 			[[nodiscard]]
 			virtual zmq::message_t operator()(cv::Mat arg) override {
@@ -81,6 +85,8 @@ namespace Pipeline {
 
 				return std::shared_ptr<ISerializationManager>{ new NDArraySerializator<cv::Mat>{ std::move(*this) } };
 			}
+
+			virtual ~NDArraySerializator() = default;
 		};
 	}
 }

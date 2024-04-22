@@ -17,6 +17,8 @@ namespace Pipeline {
 			virtual std::shared_ptr<Stage::IStageManager<DataT, DaoT>> build(std::vector<std::pair<std::string, std::shared_ptr<Connector::IConnector<DaoT>>>>&, std::function<DataT(DaoT)>, std::function<DaoT(DaoT, DataT)>) = 0;
 
 			virtual const Stage::Stage<DataT>& getStages() = 0;
+			
+			virtual ~IStageBuilder() = default;
 		};
 	}
 }

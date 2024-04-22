@@ -15,6 +15,8 @@ namespace Pipeline {
 			virtual const std::function<void(std::shared_ptr< detail::IMonitoringMeasurements>)>& getMonitoringCallback() = 0;
 
 			virtual const std::vector<std::function<void(void)>>& getThreadCallables() = 0;
+			
+			virtual ~IScalableManager() = default;
 		};
 	}
 }
