@@ -2,6 +2,7 @@
 
 #include <string>
 #include <fstream>
+#include <filesystem>
 #include <stdexcept>
 #include "memory"
 
@@ -44,8 +45,11 @@ namespace Pipeline {
 
 				for (auto&& dlFileName : dlProperties) {
 
+					std::filesystem::path p{ dlFileName };
+					p.make_preferred();
+
 					std::shared_ptr<DL::DL> dl;
-					dl.reset(new DL::DL{ dlFileName });
+					dl.reset(new DL::DL{ p.string() });
 
 					if (!(*dl)(reinterpret_cast<void*>(&chooser)))
 						throw std::runtime_error{ std::string{"Error with "} + dlFileName + std::string{" DL! <from Dynamic Library Builder (ScalableParallelPipelineBuilder)>"} };

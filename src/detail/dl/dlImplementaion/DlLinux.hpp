@@ -21,6 +21,8 @@ namespace Pipeline {
 			DL(const std::string& dlFileName) {
 
 				handle = dlopen(dlFileName.c_str(), RTLD_LAZY);
+				if (!handle)
+					std::cerr << dlerror() << std::endl;
 			}
 
 			DL(DL&&) = delete;
