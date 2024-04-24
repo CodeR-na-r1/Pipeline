@@ -76,7 +76,7 @@ namespace Pipeline {
 
 				parseConfig();
 
-				ScalableStageAssembly<DataT, DaoT> sAsm{};
+				ScalableStageAssembly<Traits> sAsm{};
 
 				sAsm.initStages(stages, scalableProperties, synchronyzeProperties, isOneRNManager, outputQueues);
 

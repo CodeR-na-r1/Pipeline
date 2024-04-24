@@ -79,7 +79,7 @@ namespace Pipeline {
 			[[nodiscard]]
 			virtual std::shared_ptr<Stage::IStageManager<DataT, DaoT>> build(std::vector<std::pair<std::string, std::shared_ptr<Connector::IConnector<DaoT>>>>& outputQueues, std::function<DataT(DaoT)> mapperFromDao, std::function<DaoT(DaoT, DataT)> mapperToDao) override {
 
-				StageAssembly<DataT, DaoT> sAsm{};
+				StageAssembly<Traits> sAsm{};
 
 				sAsm.initStages(stages, outputQueues);
 

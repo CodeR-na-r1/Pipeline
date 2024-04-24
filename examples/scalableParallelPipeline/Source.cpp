@@ -22,6 +22,8 @@
 #include "utils/InputDistributor.hpp"
 #include "utils/OutputDistributor.hpp"
 
+#include "detail/monitoring/Measurements.hpp"
+
 using namespace std;
 
 using namespace Pipeline;
@@ -34,6 +36,9 @@ struct UserTraitsScalablePipeline {
     using BrokerInputT = Broker::ZmqReceiverBroker::BrokerInputT;
     using BrokerOutputT = Broker::ZmqSendlerBroker::BrokerOutputT;
     using DaoT = Builder::ScalableParallelPipelineBuilder<DataT>::DaoT;
+
+    static constexpr std::size_t ConnectorSize = 1024;
+    using MeasurementsT = Pipeline::detail::Measurements;
 };
 
 int main() try {
@@ -74,7 +79,7 @@ int main() try {
             .addMonitoringCallback([](std::shared_ptr<detail::IMonitoringMeasurements> measures) {
                 std::cout << "Queue load:\n";
                 for (auto&& it : measures->getQueueLoad()) {
-                    std::cout << "\tstage id " << it.first << " ---> " << it.second << " / 1024\n";
+                    std::cout << "\tstage id " << it.first << " ---> " << it.second << " / " << UserTraitsScalablePipeline::ConnectorSize << "\n";
                 }
                 std::cout << "------------\n";
         }).build()

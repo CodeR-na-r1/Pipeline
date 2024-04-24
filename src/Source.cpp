@@ -32,6 +32,8 @@
 #include "utils/InputDistributor.hpp"
 #include "utils/OutputDistributor.hpp"
 
+#include "detail/monitoring/Measurements.hpp"
+
 using namespace std;
 
 using namespace Pipeline;
@@ -42,6 +44,9 @@ struct UserTraitsPipeline {
     using BrokerInputT = Broker::ZmqReceiverBroker::BrokerInputT;
     using BrokerOutputT = Broker::ZmqSendlerBroker::BrokerOutputT;
     using DaoT = Builder::ParallelPipelineBuilder<DataT>::DaoT;
+
+    static constexpr std::size_t ConnectorSize = 1024;
+    using MeasurementsT = Pipeline::detail::Measurements;
 };
 
 struct UserTraitsScalablePipeline {
@@ -50,6 +55,9 @@ struct UserTraitsScalablePipeline {
     using BrokerInputT = Broker::ZmqReceiverBroker::BrokerInputT;
     using BrokerOutputT = Broker::ZmqSendlerBroker::BrokerOutputT;
     using DaoT = Builder::ScalableParallelPipelineBuilder<DataT>::DaoT;
+
+    static constexpr std::size_t ConnectorSize = 1024;
+    using MeasurementsT = Pipeline::detail::Measurements;
 };
 
 //#define PARALLEL_PIPE_TYPE
@@ -98,7 +106,7 @@ int main() try {
                 .addMonitoringCallback([](std::shared_ptr<detail::IMonitoringMeasurements> measures) {
                     std::cout << "Queue load:\n";
                     for (auto&& it : measures->getQueueLoad()) {
-                        std::cout << "\tstage id " << it.first << " ---> " << it.second << " / 1024\n";
+                        std::cout << "\tstage id " << it.first << " ---> " << it.second << " / " << UserTraitsPipeline::ConnectorSize << "\n";
                     }
                     std::cout << "------------\n";
                 }).build()
@@ -162,7 +170,7 @@ int main() try {
         .addMonitoringCallback([](std::shared_ptr<detail::IMonitoringMeasurements> measures) {
             std::cout << "Queue load:\n";
             for (auto&& it : measures->getQueueLoad()) {
-                std::cout << "\tstage id " << it.first << " ---> " << it.second << " / 1024\n";
+                std::cout << "\tstage id " << it.first << " ---> " << it.second << " / " << UserTraitsScalablePipeline::ConnectorSize << "\n";
             }
             std::cout << "------------\n";
             }).build()

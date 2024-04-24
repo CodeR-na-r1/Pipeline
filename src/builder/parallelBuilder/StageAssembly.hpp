@@ -19,8 +19,13 @@ namespace Pipeline {
 
 		using namespace std::chrono_literals;
 
-		template <typename DataT, typename DaoT>
+		template <typename Traits>
 		struct StageAssembly {
+
+			using DataT = typename Traits::DataT;
+			using DaoT = typename Traits::DaoT;
+
+			using MeasurementsT = typename Traits::MeasurementsT;
 
 			std::unordered_map<std::size_t, Stage::Stage<DataT>> stagesMap{}; // id ->  stage by id
 			std::unordered_map<std::size_t, std::shared_ptr<Connector::IConnector<DaoT>>> inputQueueMap{}; // get parent queue for current stage by id (i.e. get input queue)
@@ -46,7 +51,7 @@ namespace Pipeline {
 
 				// fill
 
-				inputQueueMap.insert({ stages.getId(), std::shared_ptr<Connector::IConnector<DaoT>>{new Connector::SPSCConnector<DaoT, 1024>{}} });
+				inputQueueMap.insert({ stages.getId(), std::shared_ptr<Connector::IConnector<DaoT>>{new Connector::SPSCConnector<DaoT, Traits::ConnectorSize>{}} });
 
 				std::queue<const Stage::Stage<DataT>*> queue;
 				queue.push(&stages);
@@ -55,14 +60,14 @@ namespace Pipeline {
 
 					auto current = queue.front();
 
-					measurementsMap.insert({ current->getId(), std::shared_ptr<detail::IMeasurements>{new detail::Measurements{}} });
+					measurementsMap.insert({ current->getId(), std::shared_ptr<detail::IMeasurements>{new MeasurementsT{}} });
 
 					outputQueuesMap.insert({ current->getId(), {} });
 					outputQueuesMap.at(current->getId()).reserve(current->getChilds().size());
 
 					for (auto&& child : current->getChilds()) {
 
-						std::shared_ptr<Connector::IConnector<DaoT>> temp{ new Connector::SPSCConnector<DaoT, 1024>{} };
+						std::shared_ptr<Connector::IConnector<DaoT>> temp{ new Connector::SPSCConnector<DaoT, Traits::ConnectorSize>{} };
 						outputQueuesMap.at(current->getId()).push_back(temp);
 						inputQueueMap.insert({ child.getId(), temp });
 						queue.push(&child);
@@ -83,7 +88,7 @@ namespace Pipeline {
 
 					auto&& id = idOpt.value();
 
-					std::shared_ptr<Connector::IConnector<DaoT>> temp{ new Connector::SPSCConnector<DaoT, 1024>{} };
+					std::shared_ptr<Connector::IConnector<DaoT>> temp{ new Connector::SPSCConnector<DaoT, Traits::ConnectorSize>{} };
 
 					outputQueuesMap[id].push_back(temp);
 					it.second = temp;

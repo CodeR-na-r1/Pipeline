@@ -22,8 +22,13 @@ namespace Pipeline {
 
 		using namespace std::chrono_literals;
 
-		template <typename DataT, typename DaoT>
+		template <typename Traits>
 		struct ScalableStageAssembly {
+
+			using DataT = typename Traits::DataT;
+			using DaoT = typename Traits::DaoT;
+
+			using MeasurementsT = typename Traits::MeasurementsT;
 
 			std::unordered_map<std::size_t, Stage::Stage<DataT>> stagesMap{}; // id ->  stage by id
 			std::unordered_map<std::size_t, std::shared_ptr<Connector::IConnector<DaoT>>> inputQueueMap{}; // get parent queue for current stage by id (i.e. get input queue)
@@ -50,11 +55,11 @@ namespace Pipeline {
 				// fill
 
 				if (synchronyzeProperties.contains(stages.getId()))
-					inputQueueMap.insert({ stages.getId(), std::shared_ptr<Connector::IConnector<DaoT>>{new Connector::SyncMapConnector<DaoT, 1024>{}} });
+					inputQueueMap.insert({ stages.getId(), std::shared_ptr<Connector::IConnector<DaoT>>{new Connector::SyncMapConnector<DaoT, Traits::ConnectorSize>{}} });
 				else if (scalableProperties.contains(stages.getId()) || !isOneRNManager)
-					inputQueueMap.insert({ stages.getId(), std::shared_ptr<Connector::IConnector<DaoT>>{new Connector::MPMCConnector<DaoT, 1024>{}} });
+					inputQueueMap.insert({ stages.getId(), std::shared_ptr<Connector::IConnector<DaoT>>{new Connector::MPMCConnector<DaoT, Traits::ConnectorSize>{}} });
 				else
-					inputQueueMap.insert({ stages.getId(), std::shared_ptr<Connector::IConnector<DaoT>>{new Connector::SPSCConnector<DaoT, 1024>{}} });
+					inputQueueMap.insert({ stages.getId(), std::shared_ptr<Connector::IConnector<DaoT>>{new Connector::SPSCConnector<DaoT, Traits::ConnectorSize>{}} });
 
 				std::queue<const Stage::Stage<DataT>*> queue;
 				queue.push(&stages);
@@ -63,7 +68,7 @@ namespace Pipeline {
 
 					auto current = queue.front();
 
-					measurementsMap.insert({ current->getId(), std::shared_ptr<detail::IMeasurements>{new detail::Measurements{}} });
+					measurementsMap.insert({ current->getId(), std::shared_ptr<detail::IMeasurements>{new MeasurementsT{}} });
 
 					outputQueuesMap.insert({ current->getId(), {} });
 					outputQueuesMap.at(current->getId()).reserve(current->getChilds().size());
@@ -73,11 +78,11 @@ namespace Pipeline {
 						auto&& temp = std::shared_ptr<Connector::IConnector<DaoT>>{};
 
 						if (synchronyzeProperties.contains(child.getId()))
-							temp.reset(new Connector::SyncMapConnector<DaoT, 1024>{});
+							temp.reset(new Connector::SyncMapConnector<DaoT, Traits::ConnectorSize>{});
 						else if (scalableProperties.contains(current->getId()) || scalableProperties.contains(child.getId()))
-							temp.reset(new Connector::MPMCConnector<DaoT, 1024>{});
+							temp.reset(new Connector::MPMCConnector<DaoT, Traits::ConnectorSize>{});
 						else
-							temp.reset(new Connector::SPSCConnector<DaoT, 1024>{});
+							temp.reset(new Connector::SPSCConnector<DaoT, Traits::ConnectorSize>{});
 
 						outputQueuesMap.at(current->getId()).push_back(temp);
 						inputQueueMap.insert({ child.getId(), temp });
@@ -102,9 +107,9 @@ namespace Pipeline {
 					auto&& temp = std::shared_ptr<Connector::IConnector<DaoT>>{};
 
 					if (scalableProperties.contains(id))
-						temp.reset(new Connector::MPMCConnector<DaoT, 1024>{});
+						temp.reset(new Connector::MPMCConnector<DaoT, Traits::ConnectorSize>{});
 					else
-						temp.reset(new Connector::SPSCConnector<DaoT, 1024>{});
+						temp.reset(new Connector::SPSCConnector<DaoT, Traits::ConnectorSize>{});
 
 					outputQueuesMap[id].push_back(temp);
 					it.second = temp;
