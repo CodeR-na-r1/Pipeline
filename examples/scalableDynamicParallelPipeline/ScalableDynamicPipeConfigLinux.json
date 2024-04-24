@@ -1,0 +1,36 @@
+{
+    "in" : [
+        {"broker" : "zmq", "ip" : "127.0.0.1", "port" : "5558", "deserializator" : "ndarray"}
+    ],
+    
+    "out" : [
+        {"afterStage" : "display", "broker" : "zmq", "ip" : "127.0.0.1", "port" : "6668", "deserializator" : "ndarray"}
+    ],
+
+    "dependencies" : [
+        "libUserDL.so"
+    ],
+
+    "stages" : {
+        
+        "start" : "drawLogo",
+        "list" : [
+            {"name" : "drawLogo", "callable" : "drawLogo", "isScalable" : "1" },
+            {"name" : "gray", "callable" : "rgb2gray", "isScalable" : "1" },
+            {"name" : "blur", "callable" : "gaussian", "isScalable" : "1" },
+            {"name" : "dilate", "callable" : "dillation", "isScalable" : "1" },
+            {"name" : "display", "callable" : "display", "isSync" : "1"},
+            {"name" : "circle", "callable" : "circle"}
+        ]
+    },
+
+    "connections" : {
+
+        "list" : [
+            {"from" : "drawLogo", "to" : ["gray", "circle"]},
+            {"from" : "gray", "to" : "blur"},
+            {"from" : "blur", "to" : "dilate"},
+            {"from" : "dilate", "to" : ["display"]}
+        ]
+    }
+}
