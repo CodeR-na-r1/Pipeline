@@ -2,6 +2,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <stdexcept>
 #include <fstream>
 #include <sstream>
 #include <functional>
@@ -24,11 +25,13 @@ BOOST_AUTO_TEST_CASE(TestCreatePipelineByConfigFromFileWithError) {
 
 	chooser->addChoser({ "sourceCallable" , [](int data) {return data; } });
 
-	auto source = Pipeline::Parser::JsonParser::fromFile<int>(fileJsonConfig, chooser);
+	BOOST_CHECK_EXCEPTION(Pipeline::Parser::JsonParser::fromFile<int>(fileJsonConfig, chooser), std::runtime_error, [](const std::runtime_error& ex) {
+
+		BOOST_CHECK_EQUAL(ex.what(), std::string("Not find callable (function) for stage with name 'gray' <from configuration parser>"));
+		return true;
+	});
 
 	fileJsonConfig.close();
-
-	BOOST_CHECK(source.has_value() == false);
 }
 
 BOOST_AUTO_TEST_CASE(TestCreatePipelineByConfigFromFile) {
@@ -43,8 +46,7 @@ BOOST_AUTO_TEST_CASE(TestCreatePipelineByConfigFromFile) {
 	chooser->addChoser({ "blub" , [](int data) {return data * 3; } });
 	chooser->addChoser({ "rgb2gray" , [](int data) {return data; } });
 
-	auto source = Pipeline::Parser::JsonParser::fromFile<int>(fileJsonConfig, chooser)
-		.value_or(Pipeline::Stage::Stage<int>{[](int data) {return data; }, {}, {} });
+	auto&& source = Pipeline::Parser::JsonParser::fromFile<int>(fileJsonConfig, chooser);
 
 	fileJsonConfig.close();
 

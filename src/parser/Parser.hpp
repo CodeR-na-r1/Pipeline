@@ -7,13 +7,13 @@
 
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
 #include <memory>
 
 #include <string>
 #include <vector>
 #include <queue>
 
-#include <optional>
 #include <functional>
 
 namespace Pipeline {
@@ -25,7 +25,7 @@ namespace Pipeline {
 		struct JsonParser {
 
 			template <typename TData>
-			static std::optional<Stage::Stage<TData>> fromFile(std::ifstream& f, std::shared_ptr<detail::IChooser<TData>> chooser) {
+			static Stage::Stage<TData> fromFile(std::ifstream& f, std::shared_ptr<detail::IChooser<TData>> chooser) {
 
 				std::function<TData(TData)> tempCallable;
 
@@ -39,11 +39,11 @@ namespace Pipeline {
 				std::string startName = stagesInfo["start"];
 				auto startCallable = std::find_if(stages.begin(), stages.end(), [&startName](auto a) { return a["name"] == startName; });
 				if (startCallable == stages.end()) {
-					return {};
+					throw std::runtime_error{ std::string{"Not find start stage with name \'"} + startName + std::string{"\' <from configuration parser>"} };
 				}
 
 				if (!chooser->operator()((*startCallable)["callable"], tempCallable))
-					return {};
+					throw std::runtime_error{ std::string{"Not find callable (function) for start stage with name \'"} + startName + std::string{"\' <from configuration parser>"} };
 
 				Stage::Stage<TData> res{ std::move(tempCallable), startName, {} };
 
@@ -62,10 +62,10 @@ namespace Pipeline {
 							for (auto&& child : value) {
 								auto callableNameIt = std::find_if(stages.begin(), stages.end(), [child](auto a) { return a["name"] == child; });
 								if (callableNameIt == stages.end()) {
-									return {};
+									throw std::runtime_error{ std::string{"Not find stage with name \'"} + child.template get<std::string>() + std::string{"\' <from configuration parser>"} };
 								}
 								if (!chooser->operator()((*callableNameIt)["callable"], tempCallable))
-									return {};
+									throw std::runtime_error{ std::string{"Not find callable (function) for stage with name \'"} + child.template get<std::string>() + std::string{"\' <from configuration parser>"} };
 								current->addChild(std::move(Stage::Stage<TData>{ std::move(tempCallable), child, {} }));
 							}
 							for (auto&& child : current->getChilds()) {
@@ -75,15 +75,15 @@ namespace Pipeline {
 						else if (value.is_string()) {
 							auto callableNameIt = std::find_if(stages.begin(), stages.end(), [value](auto a) { return a["name"] == value; });
 							if (callableNameIt == stages.end()) {
-								return {};
+								throw std::runtime_error{ std::string{"Not find stage with name \'"} + value.template get<std::string>() + std::string{"\' <from configuration parser>"} };
 							}
 							if (!chooser->operator()((*callableNameIt)["callable"], tempCallable))
-								return {};
+								throw std::runtime_error{ std::string{"Not find callable (function) for stage with name \'"} + value.template get<std::string>() + std::string{"\' <from configuration parser>"} };
 							current->addChild(std::move(Stage::Stage<TData>{ std::move(tempCallable), value, {} }));
 							queue.push(&(current->getChilds()[0]));
 						}
 						else {
-							return {};
+							throw std::runtime_error{ std::string{"Not supported type format for describe list \'to\' for stage with name \'"} + current->getName() + std::string{"\' <from configuration parser>"} };
 						}
 					}
 
