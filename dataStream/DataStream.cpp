@@ -7,6 +7,7 @@
 #include "capnp/serialize.h"
 
 #include <iostream>
+#include <fstream>
 #include <thread>
 #include <atomic>
 #include <chrono>
@@ -18,11 +19,24 @@ int main() {
 
 	// params
 
-	const std::string fileName = "../../dataStream/video/video1080.webm";
-	const int FREQUENCE = 20;	// fps
+	std::string fileName{};
+	int FREQUENCE{};
 
-	const std::string ip = "127.0.0.1";
-	const int port = 5558;
+	std::string ip{};
+	int port{};
+
+	std::ifstream configFile{ "dataStreamConfig.txt" };
+	if (!configFile.is_open()) {
+		std::cerr << "Config file not found!" << std::endl;
+		return -1;
+	}
+
+	configFile >> fileName;
+	configFile >> FREQUENCE;
+	configFile >> ip;
+	configFile >> port;
+
+	configFile.close();
 
 	zmq::context_t ctx{};
 	zmq::socket_t sck{ ctx, zmq::socket_type::pub };
@@ -31,7 +45,7 @@ int main() {
 	cv::VideoCapture cap{ fileName };
 
 	if (!cap.isOpened()) {
-		std::cerr << "Error opening file" << std::endl;
+		std::cerr << "Error opening videofile" << std::endl;
 		return -1;
 	}
 
@@ -63,7 +77,7 @@ int main() {
 		}
 	} };
 
-	std::thread streamThread{ [&cap, &fps, &sck, &isEndWork]() {
+	std::thread streamThread{ [&cap, &fps, &sck, FREQUENCE, &isEndWork]() {
 
 		cv::Mat frame{};
 		uint32_t framesCounter{};
