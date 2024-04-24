@@ -79,7 +79,7 @@ namespace Pipeline {
 					auto&& idOpt = detail::nameToId(stages, stageName);
 
 					if (!idOpt.has_value())
-						throw std::runtime_error{ std::string{"Stage with name \'"} + stageName + std::string{"\' not found"} };
+						throw std::runtime_error{ std::string{"Stage with name \'"} + stageName + std::string{"\' not found <for Sendler Network Manager>"} };
 
 					auto&& id = idOpt.value();
 

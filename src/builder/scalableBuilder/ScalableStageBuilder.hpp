@@ -116,12 +116,7 @@ namespace Pipeline {
 					throw std::runtime_error{ "Config file not open! <from Stagebuilder>" };
 
 				// parse stages
-				auto&& resParser = Parser::JsonParser::fromFile<DataT>(configFile, std::shared_ptr<detail::IChooser<DataT>>(new detail::Chooser<DataT>{ std::move(_chooser) }));
-
-				if (!resParser.has_value())
-					throw std::runtime_error{ "Configuration error! <from parser>" };
-
-				stages = std::move(resParser.value());
+				stages = Parser::JsonParser::fromFile<DataT>(configFile, std::shared_ptr<detail::IChooser<DataT>>(new detail::Chooser<DataT>{ std::move(_chooser) }));
 
 				// reset state of file
 				configFile.clear();
