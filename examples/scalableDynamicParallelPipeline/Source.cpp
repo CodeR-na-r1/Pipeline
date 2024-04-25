@@ -23,6 +23,7 @@
 #include "utils/OutputDistributor.hpp"
 
 #include "detail/monitoring/Measurements.hpp"
+#include "detail/monitoring/RelaxedMeasurements.hpp"
 
 using namespace std;
 
@@ -38,7 +39,7 @@ struct UserTraitsScalablePipeline {
     using DaoT = Builder::ScalableParallelPipelineBuilder<DataT>::DaoT;
 
     static constexpr std::size_t ConnectorSize = 1024;
-    using MeasurementsT = Pipeline::detail::Measurements;
+    using MeasurementsT = Pipeline::detail::RelaxedMeasurements;
 };
 
 int main() try {
@@ -74,6 +75,10 @@ int main() try {
                 std::cout << "Queue load:\n";
                 for (auto&& it : measures->getQueueLoad()) {
                     std::cout << "\tstage id " << it.first << " ---> " << it.second << " / " << UserTraitsScalablePipeline::ConnectorSize << "\n";
+                }
+                std::cout << "Time per operand:\n";
+                for (auto&& it : measures->getAvgTimePerCallable()) {
+                    std::cout << "\tstage id " << it.first << " ---> " << it.second << " ms\n";
                 }
                 std::cout << "------------\n";
         }).build()
