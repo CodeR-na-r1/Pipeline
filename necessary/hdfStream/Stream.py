@@ -23,12 +23,12 @@ def array_to_capnp(arr):
     ndarray.shape = arr.shape
     ndarray.data = arr.tobytes()
 
-    print(f"sizeArr -> {arr.shape}")
-    print(f"sizeData -> {len(ndarray.data)}")
+    # print(f"sizeArr -> {arr.shape}")
+    # print(f"sizeData -> {len(ndarray.data)}")
 
     ndarray.dtype = getattr(array_schema.NDArray.DType, arr.dtype.name)
 
-    print(ndarray.dtype)
+    # print(ndarray.dtype)
     ndarray.timestamp = int(time.time() * 10**7)
     return ndarray.to_bytes()
 
@@ -45,19 +45,29 @@ socket.bind(url)
 
 # ---
 
-cv2.namedWindow("window", cv2.WINDOW_GUI_NORMAL)
+# cv2.namedWindow("window", cv2.WINDOW_GUI_NORMAL)
+
+fps = 0
+fpsTimer = time.time()
 
 for frame in f["image"]:
     try:
 
-        cv2.imshow("window", frame)
-        cv2.waitKey(1)
+        fps += 1
+
+        # cv2.imshow("window", frame)
+        # cv2.waitKey(1)
 
         img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         socket.send(array_to_capnp(img))
 
-        time.sleep(sleepTime)
+        if time.time() - fpsTimer > 1:
+             print(fps)
+             fps = 0
+             fpsTimer = time.time()
+
+        # time.sleep(sleepTime)
 
     except KeyboardInterrupt as e:
             
